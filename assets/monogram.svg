@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Strawberries.Moon monogram">
+  
+  <defs>
+    
+    <path id="ringPath" d="M 100 100 m -78 0 a 78 78 0 1 1 156 0 a 78 78 0 1 1 -156 0"></path>
+  </defs>
+  <circle cx="100" cy="100" r="96" class="badge-bg"></circle>
+  <circle cx="100" cy="100" r="82" class="badge-ring"></circle>
+  
+  <text x="100" y="118" class="badge-fg" font-size="76" text-anchor="middle">SM</text>
+  
+  <path d="M 100 32 a 14 14 0 1 0 12 22 a 11 11 0 1 1 -12 -22 z" fill="#fffaf2"></path>
+  
+  <text class="badge-tick">
+    <textPath href="#ringPath" startOffset="2%">strawberries · moon · film camera · memories ·</textPath>
+  </text>
+</svg>

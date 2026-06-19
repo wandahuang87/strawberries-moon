@@ -1,0 +1,131 @@
+/* ──────────────────────────────────────────────────────────────
+   Strawberries.Moon — colors_and_type.css
+   70s retro-groovy meets dreamy pastel pink. Soft, witty, romantic.
+   ────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,700&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  /* ── PALETTE (from the actual logo) ────────────────────────── */
+  /* Pinks: the logo's moon + script wash */
+  --pink-50:  #fff5f5;
+  --pink-100: #ffe6e6;
+  --pink-200: #ffd1d4;          /* logo soft pink fill */
+  --pink-300: #f5b8bd;
+  --pink-400: #e89aa1;          /* moon mid */
+  --pink-500: #d97c83;          /* moon dusk */
+
+  /* Coral / terracotta: the logo's outline */
+  --coral-300: #e4998a;
+  --coral-400: #c97557;          /* logo outline ★ */
+  --coral-500: #a85a3e;
+  --coral-600: #7e3f29;
+
+  /* Cream paper */
+  --cream-50:  #fffaf2;
+  --cream-100: #fff3e1;
+  --cream-200: #f6e6cc;
+  --cream-300: #e9d3ad;
+
+  /* Berry retained as small accent only */
+  --berry-500: #e8243a;
+
+  /* Berry scale + dark "cosmic" surfaces + candy accents.
+     The brand pivoted to pink/coral, but the shop UI kit uses these
+     tokens for dark surfaces (footer, buttons), hovers, and accents.
+     Mapped here to warm tones that fit the retro-pink direction. */
+  --berry-100: #ffd9dd;
+  --berry-300: #f5949c;
+  --berry-700: #b3122a;
+
+  /* "cosmic" = deep warm plum-brown for dark surfaces & strong text */
+  --cosmic-50:  #f7e9ee;
+  --cosmic-100: #efd3dc;   /* light tint for text on dark surfaces */
+  --cosmic-500: #7a4a58;   /* mid */
+  --cosmic-700: #44222f;   /* darkest — footer bg, primary text */
+
+  /* candy accents */
+  --candy-pink: #ffb8d6;
+  --candy-buttercream: #fff0a8;
+  --candy-mint: #b8efd4;
+  --candy-glow: #ffd25a;
+
+  /* Soft text */
+  --ink-700: #5a2f24;            /* warm brown text */
+  --ink-500: #8a5446;
+  --ink-400: #b07f70;
+
+  /* ── SEMANTIC ──────────────────────────────────────────────── */
+  --bg:       var(--cream-50);
+  --bg-alt:   var(--pink-50);
+  --bg-soft:  var(--pink-100);
+
+  --fg:       var(--ink-700);
+  --fg-2:     var(--ink-500);
+  --fg-3:     var(--ink-400);
+
+  --hairline: var(--cream-200);
+  --accent:   var(--coral-400);
+  --accent-deep: var(--coral-500);
+
+  --link:       var(--coral-400);
+  --link-hover: var(--coral-600);
+
+  /* ── TYPE ──────────────────────────────────────────────────── */
+  --font-display: "Alfa Slab One", "Fraunces", Georgia, serif;        /* groovy 70s slab — closest free match to logo */
+  --font-serif:   "Fraunces", Georgia, serif;
+  --font-sans:    "Sora", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  --t-hero: clamp(56px, 11vw, 168px);    /* @kind font */
+  --t-display: clamp(40px, 7vw, 96px);   /* @kind font */
+  --t-h1: clamp(32px, 4.2vw, 56px);      /* @kind font */
+  --t-h2: clamp(24px, 3vw, 36px);        /* @kind font */
+  --t-h3: 22px;                          /* @kind font */
+  --t-body: 17px;                        /* @kind font */
+  --t-small: 14px;                       /* @kind font */
+  --t-eyebrow: 12px;                     /* @kind font */
+
+  --lh-tight: 0.95;                      /* @kind font */
+  --lh-snug: 1.1;                        /* @kind font */
+  --lh-body: 1.5;                        /* @kind font */
+
+  --ls-display: 0.005em;                 /* @kind font */
+  --ls-eyebrow: 0.22em;                  /* @kind font */
+
+  /* ── SHAPE ─────────────────────────────────────────────────── */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION ─────────────────────────────────────────────── */
+  --sh-soft: 0 1px 2px rgba(168, 90, 62, 0.08), 0 8px 24px rgba(168, 90, 62, 0.10);
+  --sh-card: 0 2px 4px rgba(168, 90, 62, 0.06), 0 16px 40px rgba(168, 90, 62, 0.12);
+  --sh-pop:  0 12px 28px rgba(217, 124, 131, 0.32);
+
+  /* ── SPACE ─────────────────────────────────────────────────── */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 72px; --s-9: 112px;
+
+  /* ── MOTION ────────────────────────────────────────────────── */
+  --ease-soft: cubic-bezier(.2, .9, .25, 1);      /* @kind other */
+  --ease-bouncy: cubic-bezier(.34, 1.56, .64, 1); /* @kind other */
+  --dur-quick: 140ms;                             /* @kind other */
+  --dur-base: 240ms;                              /* @kind other */
+}
+
+.sm-display { font-family: var(--font-display); font-weight: 400; font-size: var(--t-display); line-height: var(--lh-tight); color: var(--coral-400); }
+.sm-h1 { font-family: var(--font-display); font-size: var(--t-h1); line-height: var(--lh-snug); color: var(--coral-400); }
+.sm-h2 { font-family: var(--font-display); font-size: var(--t-h2); line-height: var(--lh-snug); color: var(--coral-400); }
+.sm-h3 { font-family: var(--font-sans); font-weight: 600; font-size: var(--t-h3); color: var(--ink-700); }
+.sm-body { font-family: var(--font-sans); font-size: var(--t-body); line-height: var(--lh-body); color: var(--fg); }
+.sm-small { font-family: var(--font-sans); font-size: var(--t-small); color: var(--fg-2); }
+.sm-eyebrow { font-family: var(--font-sans); font-weight: 500; font-size: var(--t-eyebrow); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--fg-2); }
+.sm-mono { font-family: var(--font-mono); font-size: 13px; }
+
+body.sm-page {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-sans); font-size: var(--t-body); line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}

@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>strawberries.moon — admin</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--cream-50);
+  color: var(--cosmic-700);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+
+/* layout */
+.admin-shell { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+.sidebar {
+  background: var(--cream-100);
+  border-right: 1px solid var(--cream-200);
+  padding: 28px 20px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.brand-bar {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-size: 22px;
+  color: var(--berry-500); letter-spacing: -0.02em;
+  padding-bottom: 18px; border-bottom: 1px solid var(--cream-200);
+  margin-bottom: 20px;
+}
+.brand-bar .crumb {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--fg-3);
+}
+.return {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-3); margin-bottom: 18px;
+}
+.return:hover { color: var(--berry-500); }
+
+.product-list { display: flex; flex-direction: column; gap: 6px; }
+.product-list-item {
+  display: grid; grid-template-columns: 44px 1fr; gap: 12px;
+  align-items: center; padding: 8px 10px; border-radius: 8px;
+  cursor: pointer; transition: background 160ms;
+}
+.product-list-item:hover { background: var(--cream-200); }
+.product-list-item.active {
+  background: var(--cream-50);
+  outline: 1.5px solid var(--berry-500);
+}
+.thumb {
+  width: 44px; height: 44px; border-radius: 6px;
+  background: var(--cream-200) center/cover;
+  flex-shrink: 0;
+}
+.product-list-item .meta-title {
+  font-size: 13px; font-weight: 500;
+  color: var(--cosmic-700); line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.product-list-item .meta-price {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--berry-500); margin-top: 2px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 18px; border-radius: 999px;
+  font-family: var(--font-sans); font-size: 12px;
+  letter-spacing: .18em; text-transform: uppercase; font-weight: 500;
+  border: 0; cursor: pointer;
+  transition: all 200ms cubic-bezier(.2,.9,.25,1);
+}
+.btn-primary { background: var(--berry-500); color: var(--cream-50); }
+.btn-primary:hover { background: var(--berry-700); }
+.btn-ghost { background: transparent; color: var(--cosmic-700); border: 1px solid var(--cream-200); }
+.btn-ghost:hover { background: var(--cream-200); }
+.btn-danger { background: transparent; color: #c4133a; border: 1px solid rgba(196,19,58,.3); }
+.btn-danger:hover { background: rgba(196,19,58,.08); }
+
+.add-btn { width: 100%; margin-top: 16px; }
+
+.storage {
+  margin-top: 20px; padding: 14px; border-radius: 8px;
+  background: var(--cream-50); border: 1px solid var(--cream-200);
+  font-family: var(--font-mono); font-size: 11px; color: var(--fg-3);
+}
+.storage-bar {
+  height: 4px; background: var(--cream-200); border-radius: 2px;
+  margin: 8px 0 4px; overflow: hidden;
+}
+.storage-fill { height: 100%; background: var(--berry-500); border-radius: 2px; }
+
+.io-row { display: flex; gap: 8px; margin-top: 12px; }
+.io-row .btn { flex: 1; padding: 9px 10px; font-size: 10px; letter-spacing: .14em; }
+
+/* main */
+.main { padding: 36px 48px 80px; max-width: 880px; }
+.empty {
+  text-align: center; padding: 120px 24px;
+  color: var(--fg-3);
+}
+.empty h2 {
+  font-family: var(--font-display); font-size: 36px;
+  color: var(--cosmic-700); font-weight: 400;
+  letter-spacing: -0.02em; margin: 0 0 8px;
+}
+.empty p { max-width: 340px; margin: 0 auto 24px; }
+
+.section-head {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--fg-3); margin: 28px 0 12px;
+}
+
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg-3); margin-bottom: 8px;
+}
+.field input, .field textarea, .field select {
+  width: 100%; padding: 12px 14px;
+  background: var(--cream-50); border: 1px solid var(--cream-200);
+  border-radius: 8px;
+  font-family: var(--font-sans); font-size: 15px; color: var(--cosmic-700);
+  outline: none; transition: border-color 200ms;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--berry-500);
+}
+.field textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+.field-help {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--fg-3); margin-top: 6px; line-height: 1.5;
+}
+.field-help a { color: var(--berry-500); }
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+
+.heading {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.heading h1 {
+  font-family: var(--font-display); font-size: 38px; font-weight: 400;
+  letter-spacing: -0.02em; color: var(--cosmic-700); margin: 0;
+}
+.heading .id {
+  font-family: var(--font-mono); font-size: 11px; color: var(--fg-3);
+}
+
+.save-bar {
+  position: sticky; bottom: 0;
+  background: var(--cream-50);
+  border-top: 1px solid var(--cream-200);
+  margin: 32px -48px -80px;
+  padding: 16px 48px;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 10;
+}
+.save-status {
+  font-family: var(--font-mono); font-size: 12px; color: var(--fg-3);
+}
+.save-status.dirty { color: var(--berry-500); }
+.save-status.saved { color: #2c8c5b; }
+
+/* photos */
+.photo-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.photo-cell {
+  aspect-ratio: 1; border-radius: 8px;
+  background: var(--cream-100); position: relative;
+  overflow: hidden; cursor: grab;
+}
+.photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-cell .remove {
+  position: absolute; top: 6px; right: 6px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(20,17,92,.7); color: var(--cream-50);
+  border: 0; cursor: pointer; font-size: 14px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-cell .hero-flag {
+  position: absolute; top: 6px; left: 6px;
+  background: var(--berry-500); color: var(--cream-50);
+  font-size: 9px; letter-spacing: .15em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 3px; font-weight: 500;
+}
+.photo-add {
+  aspect-ratio: 1; border-radius: 8px;
+  border: 2px dashed var(--cream-200); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--fg-3);
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .15em; text-transform: uppercase;
+  transition: all 200ms;
+}
+.photo-add:hover { border-color: var(--berry-500); color: var(--berry-500); }
+
+/* variants */
+.variant-row {
+  display: grid; grid-template-columns: 1fr 100px 36px;
+  gap: 10px; align-items: center; margin-bottom: 8px;
+}
+.variant-row input { padding: 9px 12px; font-size: 14px; }
+.variant-row .x {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: transparent; border: 1px solid var(--cream-200);
+  color: var(--fg-3); cursor: pointer;
+}
+.variant-row .x:hover { border-color: #c4133a; color: #c4133a; }
+.add-variant {
+  background: transparent; border: 1px dashed var(--cream-200);
+  color: var(--fg-3); padding: 8px 14px; border-radius: 8px;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .15em; text-transform: uppercase;
+  cursor: pointer; margin-top: 4px;
+}
+
+.note {
+  background: rgba(232,36,58,.06); border-left: 3px solid var(--berry-500);
+  padding: 14px 18px; border-radius: 0 6px 6px 0;
+  font-size: 13px; color: var(--cosmic-700);
+  margin: 16px 0;
+}
+.note b { color: var(--berry-500); }
+.note code {
+  font-family: var(--font-mono); font-size: 12px;
+  background: rgba(20,17,92,.06); padding: 2px 5px; border-radius: 3px;
+}
+</style>
+</head>
+<body>
+<!-- password gate — keeps casual visitors out of the editor -->
+<div id="gate" style="position:fixed;inset:0;z-index:9999;background:var(--cream-50);display:flex;align-items:center;justify-content:center;font-family:var(--font-sans)">
+  <form id="gate-form" style="text-align:center;max-width:360px;width:100%;padding:24px">
+    <img src="brand/logo.png" alt="" style="height:84px;margin-bottom:16px">
+    <div style="font-family:var(--font-display);font-size:30px;color:var(--berry-500);letter-spacing:-.02em;margin-bottom:4px">admin</div>
+    <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-3);margin-bottom:26px">private · staff only</div>
+    <input id="gate-pw" type="password" placeholder="password" autocomplete="current-password" autofocus
+      style="width:100%;padding:14px 16px;border:1px solid var(--cream-200);border-radius:10px;font-family:var(--font-sans);font-size:16px;color:var(--cosmic-700);background:#fff;outline:none;box-sizing:border-box">
+    <button type="submit"
+      style="width:100%;margin-top:12px;padding:15px;border:0;border-radius:999px;background:var(--berry-500);color:var(--cream-50);font-family:var(--font-sans);font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;cursor:pointer">
+      enter
+    </button>
+    <div id="gate-err" style="color:#c4133a;font-size:13px;margin-top:14px;min-height:18px"></div>
+    <a href="index.html" style="display:inline-block;margin-top:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--fg-3);text-decoration:none">← back to shop</a>
+  </form>
+</div>
+<script>
+(function () {
+  // NOTE: this is a light client-side gate. It keeps ordinary visitors out,
+  // but anyone who views source can find the password. For real protection,
+  // also turn on password protection at your host (Netlify Access control).
+  var ADMIN_PW = 'admin87';
+  var KEY = 'sm_admin_ok';
+  var gate = document.getElementById('gate');
+  if (sessionStorage.getItem(KEY) === '1') { gate.remove(); }
+  else {
+    document.getElementById('gate-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (document.getElementById('gate-pw').value === ADMIN_PW) {
+        sessionStorage.setItem(KEY, '1');
+        gate.remove();
+      } else {
+        document.getElementById('gate-err').textContent = 'wrong password';
+        document.getElementById('gate-pw').value = '';
+      }
+    });
+  }
+})();
+</script>
+
+<div id="app"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="catalog.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024*1024) return (n/1024).toFixed(0) + ' KB';
+  return (n/1024/1024).toFixed(1) + ' MB';
+}
+
+function App() {
+  const [mode, setMode] = useState('products'); // 'products' | 'banners'
+  const [data, setData] = useState(() => Catalog.load());
+  const [selectedId, setSelectedId] = useState(() => {
+    const d = Catalog.load();
+    return d.products[0]?.id || null;
+  });
+  const [draft, setDraft] = useState(null);
+  const [saveState, setSaveState] = useState('saved'); // 'saved' | 'dirty' | 'saving'
+  const fileInputRef = useRef(null);
+  const importInputRef = useRef(null);
+  const bannerFileRef = useRef(null);
+
+  // ── banner state ─────────────────────────────────────────
+  const [selectedBannerId, setSelectedBannerId] = useState(() => Catalog.loadBanners()[0]?.id || null);
+  const [bannerDraft, setBannerDraft] = useState(null);
+  const [bannerSave, setBannerSave] = useState('saved');
+
+  // when selected product changes, refresh draft
+  useEffect(() => {
+    const p = data.products.find(x => x.id === selectedId);
+    setDraft(p ? JSON.parse(JSON.stringify(p)) : null);
+    setSaveState('saved');
+  }, [selectedId, data]);
+
+  // ── product list actions ─────────────────────────────────
+  function addProduct() {
+    const p = Catalog.newProduct();
+    Catalog.upsertProduct(p);
+    setData(Catalog.load());
+    setSelectedId(p.id);
+  }
+  function deleteProduct() {
+    if (!draft) return;
+    if (!confirm(`Delete "${draft.title}"? This cannot be undone.`)) return;
+    Catalog.removeProduct(draft.id);
+    const fresh = Catalog.load();
+    setData(fresh);
+    setSelectedId(fresh.products[0]?.id || null);
+  }
+
+  // ── draft editing ────────────────────────────────────────
+  function update(patch) {
+    setDraft(d => ({ ...d, ...patch }));
+    setSaveState('dirty');
+  }
+  function save() {
+    if (!draft) return;
+    setSaveState('saving');
+    if (Catalog.upsertProduct(draft)) {
+      setData(Catalog.load());
+      setSaveState('saved');
+    } else {
+      setSaveState('dirty');
+    }
+  }
+
+  // autosave on a debounce
+  useEffect(() => {
+    if (saveState !== 'dirty') return;
+    const t = setTimeout(save, 800);
+    return () => clearTimeout(t);
+  }, [draft, saveState]);
+
+  // ── photos ───────────────────────────────────────────────
+  async function onPhotoUpload(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const photos = [...(draft.photos || [])];
+    for (const f of files) {
+      try {
+        const dataUrl = await Catalog.compressImage(f);
+        photos.push(dataUrl);
+      } catch (err) {
+        alert('Could not read ' + f.name);
+      }
+    }
+    update({ photos });
+    e.target.value = '';
+  }
+  function removePhoto(i) {
+    const photos = [...draft.photos];
+    photos.splice(i, 1);
+    update({ photos });
+  }
+  function makeHero(i) {
+    const photos = [...draft.photos];
+    const [moved] = photos.splice(i, 1);
+    photos.unshift(moved);
+    update({ photos });
+  }
+
+  // ── variants ─────────────────────────────────────────────
+  function addVariant() {
+    update({ variants: [...(draft.variants || []), { id: Catalog.uid('v'), label: '', stock: 0 }] });
+  }
+  function updateVariant(i, patch) {
+    const v = [...draft.variants];
+    v[i] = { ...v[i], ...patch };
+    update({ variants: v });
+  }
+  function removeVariant(i) {
+    const v = [...draft.variants];
+    v.splice(i, 1);
+    update({ variants: v });
+  }
+
+  // ── banner editing ───────────────────────────────────────
+  // Wait for IndexedDB to hydrate, then sync UI to the stored catalog.
+  // Also seed default banners into older catalogs that lack them.
+  useEffect(() => {
+    let cancelled = false;
+    function sync() {
+      if (cancelled) return;
+      let d = Catalog.load();
+      if (!Array.isArray(d.banners)) {
+        d.banners = JSON.parse(JSON.stringify(Catalog.loadBanners()));
+        Catalog.save(d);
+        d = Catalog.load();
+      }
+      setData(d);
+      setSelectedId(prev => (d.products.find(p => p.id === prev) ? prev : (d.products[0]?.id || null)));
+      setSelectedBannerId(prev => ((d.banners || []).find(b => b.id === prev) ? prev : ((d.banners || [])[0]?.id || null)));
+    }
+    Catalog.ready.then(sync);
+    window.addEventListener('catalog:changed', sync);
+    return () => { cancelled = true; window.removeEventListener('catalog:changed', sync); };
+  }, []);
+  const banners = Array.isArray(data.banners) ? data.banners : [];
+  useEffect(() => {
+    const b = banners.find(x => x.id === selectedBannerId);
+    setBannerDraft(b ? JSON.parse(JSON.stringify(b)) : null);
+    setBannerSave('saved');
+  }, [selectedBannerId, data]);
+
+  function addBanner() {
+    const b = Catalog.newBanner();
+    Catalog.upsertBanner(b);
+    setData(Catalog.load());
+    setSelectedBannerId(b.id);
+  }
+  function deleteBanner() {
+    if (!bannerDraft) return;
+    if (!confirm('Delete this hero banner?')) return;
+    Catalog.removeBanner(bannerDraft.id);
+    const fresh = Catalog.load();
+    setData(fresh);
+    setSelectedBannerId((fresh.banners || [])[0]?.id || null);
+  }
+  function updateBanner(patch) {
+    setBannerDraft(d => ({ ...d, ...patch }));
+    setBannerSave('dirty');
+  }
+  function saveBanner() {
+    if (!bannerDraft) return;
+    setBannerSave('saving');
+    if (Catalog.upsertBanner(bannerDraft)) {
+      setData(Catalog.load());
+      setBannerSave('saved');
+    } else setBannerSave('dirty');
+  }
+  useEffect(() => {
+    if (bannerSave !== 'dirty') return;
+    const t = setTimeout(saveBanner, 700);
+    return () => clearTimeout(t);
+  }, [bannerDraft, bannerSave]);
+  function moveBanner(dir) {
+    if (!bannerDraft) return;
+    Catalog.moveBanner(bannerDraft.id, dir);
+    setData(Catalog.load());
+  }
+  async function onBannerPhoto(e) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const dataUrl = await Catalog.compressImage(f, 1600, 0.82);
+      updateBanner({ photo: dataUrl });
+    } catch (err) { alert('Could not read ' + f.name); }
+    e.target.value = '';
+  }
+
+  // ── import / export ──────────────────────────────────────
+  async function onImport(e) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!confirm('Importing will REPLACE your current catalog. Continue?')) return;
+    try {
+      await Catalog.importJson(f);
+      const fresh = Catalog.load();
+      setData(fresh);
+      setSelectedId(fresh.products[0]?.id || null);
+      alert('Imported ✓');
+    } catch (err) {
+      alert('Could not import: ' + err.message);
+    }
+    e.target.value = '';
+  }
+
+  // (storage gauge removed — catalog now lives in IndexedDB, effectively unlimited)
+
+  return (
+    <div className="admin-shell">
+      <aside className="sidebar">
+        <a href="index.html" className="return">← back to shop</a>
+        <div className="brand-bar">
+          <span style={{fontFamily:'var(--font-display)'}}>strawberries.moon</span>
+          <span className="crumb">/ admin</span>
+        </div>
+
+        <div style={{display:'flex',gap:6,marginBottom:16}}>
+          <button onClick={() => setMode('products')}
+            style={{flex:1,padding:'9px 8px',borderRadius:8,border:0,cursor:'pointer',
+              fontFamily:'var(--font-sans)',fontSize:11,letterSpacing:'.12em',textTransform:'uppercase',fontWeight:500,
+              background: mode==='products' ? 'var(--berry-500)' : 'var(--cream-200)',
+              color: mode==='products' ? 'var(--cream-50)' : 'var(--fg-3)'}}>
+            products
+          </button>
+          <button onClick={() => setMode('banners')}
+            style={{flex:1,padding:'9px 8px',borderRadius:8,border:0,cursor:'pointer',
+              fontFamily:'var(--font-sans)',fontSize:11,letterSpacing:'.12em',textTransform:'uppercase',fontWeight:500,
+              background: mode==='banners' ? 'var(--berry-500)' : 'var(--cream-200)',
+              color: mode==='banners' ? 'var(--cream-50)' : 'var(--fg-3)'}}>
+            hero banners
+          </button>
+        </div>
+
+        {mode === 'products' && (<>
+        <div className="product-list">
+          {data.products.map(p => (
+            <div key={p.id}
+              className={`product-list-item ${p.id === selectedId ? 'active' : ''}`}
+              onClick={() => setSelectedId(p.id)}>
+              <div className="thumb" style={{
+                backgroundImage: p.photos?.[0] ? `url(${p.photos[0]})` : 'none',
+                backgroundColor: p.photos?.[0] ? 'transparent' : 'var(--cream-200)'
+              }} />
+              <div>
+                <div className="meta-title">{p.title || 'Untitled'}</div>
+                <div className="meta-price">{p.currency} {p.price.toLocaleString()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary add-btn" onClick={addProduct}>+ new product</button>
+        </>)}
+
+        {mode === 'banners' && (<>
+        <div className="product-list">
+          {banners.map((b, i) => (
+            <div key={b.id}
+              className={`product-list-item ${b.id === selectedBannerId ? 'active' : ''}`}
+              onClick={() => setSelectedBannerId(b.id)}>
+              <div className="thumb" style={{
+                backgroundImage: b.photo ? `url(${b.photo})` : 'none',
+                backgroundColor: b.photo ? 'transparent' : 'var(--candy-pink, #ffb8d6)'
+              }} />
+              <div>
+                <div className="meta-title">{b.headline || 'Untitled slide'}</div>
+                <div className="meta-price" style={{color:'var(--fg-3)'}}>slide {i + 1}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button className="btn btn-primary add-btn" onClick={addBanner}>+ new hero slide</button>
+        </>)}
+
+        <button className="btn btn-primary add-btn" onClick={() => Catalog.publish()}
+          style={{marginTop:10, background:'var(--cosmic-700)', color:'var(--cream-50)'}}>
+          ⬇ publish (download products.json)
+        </button>
+
+        <div className="storage">
+          <div style={{lineHeight:1.6}}>
+            <b style={{color:'var(--cosmic-700)'}}>to update the live site:</b><br/>
+            1. edit products & banners here<br/>
+            2. click <b>publish</b> above<br/>
+            3. upload the downloaded <code style={{background:'var(--cream-200)',padding:'1px 4px',borderRadius:3}}>products.json</code> to your host
+          </div>
+          <div className="io-row" style={{marginTop:12}}>
+            <button className="btn btn-ghost" onClick={() => Catalog.exportJson()}>backup</button>
+            <button className="btn btn-ghost" onClick={() => importInputRef.current.click()}>restore</button>
+            <input ref={importInputRef} type="file" accept="application/json" style={{display:'none'}} onChange={onImport} />
+          </div>
+        </div>
+      </aside>
+
+      <main className="main">
+        {mode === 'products' && !draft && (
+          <div className="empty">
+            <h2>no products yet</h2>
+            <p>add your first product to start building your catalog. you'll be able to upload photos, set prices, and connect a 7-11 賣貨便 order link.</p>
+            <button className="btn btn-primary" onClick={addProduct}>+ new product</button>
+          </div>
+        )}
+
+        {mode === 'products' && draft && (
+          <>
+            <div className="heading">
+              <h1>{draft.title || 'Untitled product'}</h1>
+              <span className="id">id · {draft.id}</span>
+            </div>
+
+            <div className="section-head">basics</div>
+            <div className="field">
+              <label>title</label>
+              <input value={draft.title} onChange={e => update({ title: e.target.value })} />
+            </div>
+            <div className="row-3">
+              <div className="field">
+                <label>tag <span style={{textTransform:'none',letterSpacing:0,color:'var(--fg-3)'}}>(optional, e.g. "new", "low stock")</span></label>
+                <input value={draft.tag} onChange={e => update({ tag: e.target.value })} placeholder="" />
+              </div>
+              <div className="field">
+                <label>price</label>
+                <input type="number" min="0" step="1"
+                  value={draft.price} onChange={e => update({ price: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div className="field">
+                <label>currency</label>
+                <select value={draft.currency} onChange={e => update({ currency: e.target.value })}>
+                  <option>NT$</option><option>$</option><option>€</option><option>£</option><option>¥</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="field">
+              <label>description</label>
+              <textarea value={draft.description} onChange={e => update({ description: e.target.value })} />
+            </div>
+
+            <div className="section-head">photos</div>
+            <p style={{fontSize:13,color:'var(--fg-3)',margin:'-4px 0 14px'}}>
+              first photo is the hero. click a photo to make it hero. images are auto-compressed (max 1100px). photos are stored safely — you can add plenty.
+            </p>
+            <div className="photo-grid">
+              {(draft.photos || []).map((src, i) => (
+                <div key={i} className="photo-cell" onClick={() => makeHero(i)}>
+                  <img src={src} alt="" />
+                  {i === 0 && <div className="hero-flag">hero</div>}
+                  <button className="remove" onClick={(e) => { e.stopPropagation(); removePhoto(i); }}>×</button>
+                </div>
+              ))}
+              <button className="photo-add" onClick={() => fileInputRef.current.click()}>
+                + add photo
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple
+                style={{display:'none'}} onChange={onPhotoUpload} />
+            </div>
+
+            <div className="section-head">variants & stock</div>
+            <p style={{fontSize:13,color:'var(--fg-3)',margin:'-4px 0 14px'}}>
+              optional. add sizes, formats, or colors. leave empty if there's just one version.
+            </p>
+            {(draft.variants || []).map((v, i) => (
+              <div key={v.id} className="variant-row">
+                <input placeholder="label (e.g. medium, 36 exposures)"
+                  value={v.label} onChange={e => updateVariant(i, { label: e.target.value })} />
+                <input type="number" min="0" placeholder="stock"
+                  value={v.stock} onChange={e => updateVariant(i, { stock: parseInt(e.target.value) || 0 })} />
+                <button className="x" onClick={() => removeVariant(i)}>×</button>
+              </div>
+            ))}
+            <button className="add-variant" onClick={addVariant}>+ add variant</button>
+
+            <div className="section-head">order link · 7-11 賣貨便</div>
+            <div className="note">
+              <b>this is where customers actually buy.</b> create a listing for this product on{' '}
+              <a href="https://myship.7-11.com.tw/" target="_blank" rel="noopener">7-11 賣貨便 (myship)</a>{' '}
+              and paste its link below. when a customer clicks “buy on 賣貨便”, they'll be taken straight to that page to order and pay. without a link, the buy button shows “coming soon”.
+            </div>
+            <div className="field">
+              <label>7-11 賣貨便 order link</label>
+              <input value={draft.buyLink || ''}
+                onChange={e => update({ buyLink: e.target.value })}
+                placeholder="https://myship.7-11.com.tw/..." />
+              <div className="field-help">
+                example: <code>https://myship.7-11.com.tw/general/detail/GM2402...</code>
+              </div>
+            </div>
+
+            <div className="save-bar">
+              <span className={`save-status ${saveState}`}>
+                {saveState === 'saved' && '✓ saved automatically'}
+                {saveState === 'dirty' && '● unsaved changes…'}
+                {saveState === 'saving' && '◌ saving…'}
+              </span>
+              <button className="btn btn-danger" onClick={deleteProduct}>delete product</button>
+            </div>
+          </>
+        )}
+        {mode === 'banners' && !bannerDraft && (
+          <div className="empty">
+            <h2>no hero slides</h2>
+            <p>the hero is the big rotating banner at the top of your homepage. add a slide, write a headline, and drop in a background photo.</p>
+            <button className="btn btn-primary" onClick={addBanner}>+ new hero slide</button>
+          </div>
+        )}
+
+        {mode === 'banners' && bannerDraft && (
+          <>
+            <div className="heading">
+              <h1>hero slide</h1>
+              <span className="id">id · {bannerDraft.id}</span>
+            </div>
+
+            <div className="section-head">background photo</div>
+            <p style={{fontSize:13,color:'var(--fg-3)',margin:'-4px 0 14px'}}>
+              a wide landscape photo works best (it fills the whole banner). leave empty for a soft pink gradient.
+            </p>
+            <div style={{display:'flex',gap:14,alignItems:'flex-start',marginBottom:8}}>
+              <div style={{
+                width:220,height:124,borderRadius:10,flexShrink:0,
+                background: bannerDraft.photo ? `#ffe6e6 url(${bannerDraft.photo}) center/cover` : 'linear-gradient(135deg,#ffe6e6,#f5b8bd)',
+                border:'1px solid var(--cream-200)'
+              }} />
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <button className="btn btn-ghost" onClick={() => bannerFileRef.current.click()}>upload photo</button>
+                {bannerDraft.photo && (
+                  <button className="btn btn-danger" onClick={() => updateBanner({ photo: '' })}>remove photo</button>
+                )}
+                <input ref={bannerFileRef} type="file" accept="image/*" style={{display:'none'}} onChange={onBannerPhoto} />
+              </div>
+            </div>
+
+            <div className="section-head">words</div>
+            <div className="field">
+              <label>small tag <span style={{textTransform:'none',letterSpacing:0,color:'var(--fg-3)'}}>(the little line above the headline)</span></label>
+              <input value={bannerDraft.tag || ''} onChange={e => updateBanner({ tag: e.target.value })}
+                placeholder="e.g. gift sets · 送給自己或別人" />
+            </div>
+            <div className="field">
+              <label>headline <span style={{textTransform:'none',letterSpacing:0,color:'var(--fg-3)'}}>(the big text)</span></label>
+              <input value={bannerDraft.headline || ''} onChange={e => updateBanner({ headline: e.target.value })}
+                placeholder="e.g. memories, wrapped." />
+            </div>
+            <div className="field">
+              <label>button goes to</label>
+              <input value={bannerDraft.link || ''} onChange={e => updateBanner({ link: e.target.value })}
+                placeholder="#products  (or a full link like https://...)" />
+              <div className="field-help">
+                use <code>#products</code> to scroll to your products, or paste any link (e.g. a 7-11 賣貨便 page).
+              </div>
+            </div>
+
+            <div className="section-head">order</div>
+            <div style={{display:'flex',gap:8,marginBottom:8}}>
+              <button className="btn btn-ghost" onClick={() => moveBanner(-1)}>↑ move earlier</button>
+              <button className="btn btn-ghost" onClick={() => moveBanner(1)}>↓ move later</button>
+            </div>
+
+            <div className="save-bar">
+              <span className={`save-status ${bannerSave}`}>
+                {bannerSave === 'saved' && '✓ saved automatically'}
+                {bannerSave === 'dirty' && '● unsaved changes…'}
+                {bannerSave === 'saving' && '◌ saving…'}
+              </span>
+              <button className="btn btn-danger" onClick={deleteBanner}>delete slide</button>
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+</script>
+</body>
+</html>

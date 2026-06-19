@@ -1,0 +1,40 @@
+{
+  "products": [
+    {
+      "id": "p_camera_taipei",
+      "title": "Taipei disposable · half-frame",
+      "price": 1280,
+      "currency": "NT$",
+      "tag": "new",
+      "description": "A pre-loaded 35mm half-frame camera, 72 exposures of soft afternoons. Hand-assembled in our Taipei darkroom.",
+      "photos": [],
+      "variants": [
+        { "id": "v_36", "label": "36 exposures", "stock": 12 },
+        { "id": "v_72", "label": "72 exposures (half-frame)", "stock": 8 }
+      ],
+      "buyLink": ""
+    },
+    {
+      "id": "p_film_pinkcloud",
+      "title": "film · pink cloud · 400 ISO",
+      "price": 280,
+      "currency": "NT$",
+      "tag": "",
+      "description": "A warm-leaning 35mm color film. Soft pinks, dreamy highlights, made for golden hour and the kind of memories you almost forget.",
+      "photos": [],
+      "variants": [
+        { "id": "v_1roll", "label": "1 roll", "stock": 40 },
+        { "id": "v_3pack", "label": "3-pack", "stock": 22 },
+        { "id": "v_5pack", "label": "5-pack", "stock": 9 }
+      ],
+      "buyLink": ""
+    }
+  ],
+  "banners": [
+    { "id": "b_1", "tag": "spring · 2026 · 36 exposures", "headline": "a roll of soft afternoons.", "photo": "", "link": "#products" },
+    { "id": "b_2", "tag": "new · the moon edition", "headline": "she shoots moonlight.", "photo": "", "link": "#products" },
+    { "id": "b_3", "tag": "half-frame · 72 frames per roll", "headline": "double the memories.", "photo": "", "link": "#products" },
+    { "id": "b_4", "tag": "gift sets · 送給自己或別人", "headline": "memories, wrapped.", "photo": "", "link": "#products" },
+    { "id": "b_5", "tag": "archive · made in tw", "headline": "since the moon, twenty twenty-four.", "photo": "", "link": "#products" }
+  ]
+}
