@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><title>strawberries.moon</title>
-<style id="app-style">/* ──────────────────────────────────────────────────────────────
+<style id="app-style">@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap");
+/* ──────────────────────────────────────────────────────────────
    Strawberries.Moon — colors_and_type.css
    70s retro-groovy meets dreamy pastel pink. Soft, witty, romantic.
    ────────────────────────────────────────────────────────────── */
@@ -508,7 +509,7 @@ textarea.inp { min-height: 84px; resize: vertical; line-height: 1.5; }
 .upl.wide { width: 220px; height: 124px; }
 .upl:hover, .upl:focus-within { border-color: var(--berry-500); color: var(--berry-500); }
 .upl input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.vrow { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr) auto; gap: 10px; align-items: end; }
+.vrow { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,2fr) minmax(0,1fr) auto; gap: 10px; align-items: end; }
 .row-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; }
 .row-btns div { display: flex; gap: 8px; flex-wrap: wrap; }
 .gate { max-width: 560px; margin: 0 auto; padding: 96px 24px; text-align: center; }
@@ -518,6 +519,10 @@ textarea.inp { min-height: 84px; resize: vertical; line-height: 1.5; }
 /* ── CUSTOM CAMERA + DESIGN UPLOAD ────────────────────────── */
 .tier { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--berry-500); background: var(--pink-50); border: 1px dashed var(--berry-300); border-radius: 999px; display: inline-block; padding: 6px 14px; margin: 0 0 28px; }
 .layout-prev { display: block; width: 100%; max-width: 100%; background: #fff; border: 1px solid var(--cream-200); border-radius: 10px; padding: 10px; margin: 4px 0 14px; }
+.nav button.lang-t { background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.nav button.lang-t b { font-weight: 700; color: var(--berry-500); }
+html:lang(zh-Hant) { --font-display: "Alfa Slab One", "Noto Serif TC", Georgia, serif; --font-sans: "Sora", "Noto Sans TC", "Helvetica Neue", system-ui, sans-serif; --font-mono: "JetBrains Mono", "Noto Sans TC", ui-monospace, monospace; }
+html:lang(zh-Hant) .title, html:lang(zh-Hant) .co-title, html:lang(zh-Hant) .notfound h1, html:lang(zh-Hant) .slide-headline { letter-spacing: 0; }
 .howto { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--cream-200); }
 .howto .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--fg-3); margin-bottom: 18px; }
 .howto .steps { margin-bottom: 0; gap: 22px; }
@@ -731,46 +736,69 @@ function sendOrder(o){
     delivery: M_LABEL[o.c.method], address: o.c.addr, note: o.c.note});
 }
 
+/* ---------- language ---------- */
+var LKEY = "sm-lang-v1";
+var lang = (function(){
+  var v = null; try { v = localStorage.getItem(LKEY); } catch (e) {}
+  if (v === "zh" || v === "en") return v;
+  return /^zh/i.test(navigator.language || "") ? "zh" : "en";
+})();
+function Z(){ return lang === "zh"; }
+var ORDERV = {bag: 1, checkout: 1, upload: 1};
+function ZO(){ return Z() && !!ORDERV[view]; }
+function T(en, zh){ return ZO() ? zh : en; }
+function tx(o, k){ if (!o) return ""; var z = o[k + "_zh"]; return k === "payNote" && ZO() && z != null && String(z).trim() ? z : (o[k] || ""); }
+function setLang(l){ lang = l; try { localStorage.setItem(LKEY, l); } catch (e) {} var y = window.scrollY; render(true); window.scrollTo(0, y); }
+function errText(code){
+  return {req: T("please fill this in.", "請填寫這一欄。"),
+    email: T("enter a valid email, like you@mail.com.", "請輸入正確的 Email，例如 you@mail.com。"),
+    phone: T("enter a valid mobile number.", "請輸入正確的手機號碼。"),
+    no: T("add your order number. it's at the top of your order page.", "請填寫訂單編號，在訂單頁面的最上方。"),
+    files: T("choose at least one design file.", "請至少選擇一個設計檔案。")}[code] || code;
+}
+function shipLineL(){ var s = S(); return num(s.feeHome) === 0 ? T("free shipping", "免運費") : money(s.feeHome) + (num(s.freeOver) > 0 ? T(", free over ", "，滿 ") + money(s.freeOver) + T("", " 免運") : ""); }
+
 /* ---------- shared chrome ---------- */
-function cartPill(){ return '<a href="#bag" class="cart" aria-label="bag, ' + bagCount() + ' items">bag <span class="pip bag-n">' + bagCount() + '</span></a>'; }
+function cartPill(){ return '<a href="#bag" class="cart" aria-label="' + "bag, " + bagCount() + " items" + '">' + "bag" + ' <span class="pip bag-n">' + bagCount() + '</span></a>'; }
+function langToggle(){ return '<button type="button" class="link lang-t" id="lang-t" aria-label="' + (Z() ? "Switch to English" : "切換成中文") + '">' + (Z() ? '<b>繁中</b> / EN' : '繁中 / <b>EN</b>') + '</button>'; }
 function navHome(){
-  return '<header class="nav"><div class="nav-left"><a href="#products" class="link">shop</a><a href="#contact" class="link">contact</a></div>' +
+  return '<header class="nav"><div class="nav-left"><a href="#products" class="link">' + "shop" + '</a><a href="#contact" class="link">' + "contact" + '</a></div>' +
     '<a href="#" class="logo"><img src="' + A.logo + '" alt="strawberries.moon" style="height:160px;display:block"></a>' +
-    '<div class="nav-right"><a href="#contact" class="link">繁中 / en</a>' + cartPill() + '</div></header>';
+    '<div class="nav-right">' + langToggle() + cartPill() + '</div></header>';
 }
 function navPdp(){
-  return '<header class="nav"><div class="nav-left"><a href="#" class="link">shop</a><a href="#contact" class="link">contact</a></div>' +
+  return '<header class="nav"><div class="nav-left"><a href="#" class="link">' + "shop" + '</a><a href="#contact" class="link">' + "contact" + '</a></div>' +
     '<a href="#" class="logo" style="display:flex;justify-content:center"><img src="' + A.logo + '" alt="strawberries.moon" style="height:80px;display:block"></a>' +
-    '<div class="nav-right"><a href="#contact" class="link">contact</a>' + cartPill() + '</div></header>';
+    '<div class="nav-right">' + langToggle() + cartPill() + '</div></header>';
 }
 function footPdp(){ return '<footer class="foot2"><div><span>© 2026 · strawberries.moon · taipei</span></div></footer>'; }
 function previewBar(){
   if (!previewing) return "";
   return '<div class="pvbar" role="region" aria-label="Preview">previewing unpublished changes<button type="button" id="pv-edit">back to editor</button><button type="button" class="alt" id="pv-exit">show live shop</button></div>';
 }
-function crumbs(here){ return '<div class="crumbs"><a href="#">shop</a><span>/</span><span class="here">' + esc(here) + '</span></div>'; }
+function crumbs(here){ return '<div class="crumbs"><a href="#">' + T("shop", "商品") + '</a><span>/</span><span class="here">' + esc(here) + '</span></div>'; }
 
 /* ---------- home ---------- */
 function taglineHTML(t){ return esc(t).replace(/\*([^*]+)\*/g, "<em>$1</em>"); }
 function cardHTML(p, i){
-  var ph = safeImg((p.photos || [])[0]);
+  var ph = safeImg((p.photos || [])[0]), tag = tx(p, "tag");
   return '<a class="pcard" href="#p-' + esc(slug(p.id)) + '"><div class="pcard-img" style="' + (ph ? 'background:var(--cream-100) url(' + ph + ') center/cover' : 'background:' + FB_CARD[i % FB_CARD.length]) + '">' +
     (ph ? '' : '<img class="pcard-glyph" src="' + A[FB_GLYPH[i % FB_GLYPH.length]] + '" alt="">') +
-    (p.tag ? '<span class="pcard-tag">' + esc(p.tag) + '</span>' : '') +
-    '<div class="pcard-cta">view →</div></div>' +
-    '<div class="pcard-title">' + esc(p.title) + '</div><div class="pcard-price">' + esc(money(p.price, p.currency)) + '</div></a>';
+    (tag ? '<span class="pcard-tag">' + esc(tag) + '</span>' : '') +
+    '<div class="pcard-cta">' + T("view →", "查看 →") + '</div></div>' +
+    '<div class="pcard-title">' + esc(tx(p, "title")) + '</div><div class="pcard-price">' + esc(money(p.price, p.currency)) + '</div></a>';
 }
 function homePage(){
   var s = S(), d = data(), ig = safeUrl(s.instagram);
   return '<div class="pg-home">' + navHome() +
     '<section class="hero" id="hero"><div class="slide-counter" id="slide-counter"></div></section>' +
-    '<section class="tagline"><div class="tagline-text" style="font-family: Georgia">' + taglineHTML(s.tagline) + '</div>' +
-      '<div class="tagline-sub" style="font-size: 14px">' + esc(s.taglineSub) + '</div></section>' +
-    '<section class="products" id="products"><div class="products-head"><h2>products</h2><span class="products-note">' + esc(s.productsNote) + '</span></div>' +
-      '<div class="grid">' + (d.products.length ? d.products.map(cardHTML).join("") : '<div class="grid-empty"><b>new film coming soon</b>check back soon ♡</div>') + '</div></section>' +
-    '<section class="news" id="contact"><h3>' + esc(s.newsTitle) + '</h3><p>' + esc(s.newsText) + '</p>' +
-      '<form class="news-form" id="news-form"><input id="news-email" type="email" placeholder="your email here" aria-label="email" required><button type="submit">register</button></form></section>' +
-    '<footer class="foot"><div class="foot-row"><span>© 2026 · strawberries.moon · taipei</span><span><a href="#">about</a><a href="#">care</a>' +
+    '<section class="tagline"><div class="tagline-text" style="font-family: Georgia, \'Noto Serif TC\', serif">' + taglineHTML(tx(s, "tagline")) + '</div>' +
+      '<div class="tagline-sub" style="font-size: 14px">' + esc(tx(s, "taglineSub")) + '</div></section>' +
+    '<section class="products" id="products"><div class="products-head"><h2>' + T("products", "商品") + '</h2><span class="products-note">' + esc(tx(s, "productsNote")) + '</span></div>' +
+      '<div class="grid">' + (d.products.length ? d.products.map(cardHTML).join("") : '<div class="grid-empty"><b>' + T("new film coming soon", "新底片即將上架") + '</b>' + T("check back soon ♡", "敬請期待 ♡") + '</div>') + '</div></section>' +
+    '<section class="news" id="contact"><h3>' + esc(tx(s, "newsTitle")) + '</h3><p>' + esc(tx(s, "newsText")) + '</p>' +
+      '<form class="news-form" id="news-form"><input id="news-email" type="email" placeholder="' + T("your email here", "輸入你的 Email") + '" aria-label="email" required><button type="submit">' + T("register", "訂閱") + '</button></form></section>' +
+    '<footer class="foot"><div class="foot-row"><span>© 2026 · strawberries.moon · taipei</span><span><a href="#">' + T("about", "關於我們") + '</a><a href="#">' + T("care", "保養須知") + '</a>' +
       (ig ? '<a href="' + esc(ig) + '" target="_blank" rel="noopener">instagram</a>' : '<a href="#">instagram</a>') + '</span></div></footer>' +
     previewBar() + '</div>';
 }
@@ -789,14 +817,14 @@ function startHero(){
     var grain = document.createElement("div"); grain.className = "slide-grain"; slide.appendChild(grain);
     if (!ph){ var orn = document.createElement("img"); orn.className = "slide-orn"; orn.src = A[FB_SLIDE_GLYPH[i % FB_SLIDE_GLYPH.length]]; orn.width = 240; orn.alt = ""; slide.appendChild(orn); }
     var content = document.createElement("div"); content.className = "slide-content";
-    var tw = document.createElement("div");
-    if (b.tag){ var tg = document.createElement("div"); tg.className = "slide-tag"; tg.textContent = b.tag; tw.appendChild(tg); }
-    var h = document.createElement("h2"); h.className = "slide-headline"; h.textContent = b.headline || ""; tw.appendChild(h);
+    var tw = document.createElement("div"), tagT = tx(b, "tag");
+    if (tagT){ var tg = document.createElement("div"); tg.className = "slide-tag"; tg.textContent = tagT; tw.appendChild(tg); }
+    var h = document.createElement("h2"); h.className = "slide-headline"; h.textContent = tx(b, "headline"); tw.appendChild(h);
     content.appendChild(tw);
     var cta = document.createElement("a"); cta.className = "slide-cta";
     var lk = String(b.link || "#products"); cta.href = /^#[A-Za-z0-9-]*$/.test(lk) || safeUrl(lk) ? lk : "#products";
     if (safeUrl(lk)){ cta.target = "_blank"; cta.rel = "noopener"; }
-    cta.textContent = "shop now →"; content.appendChild(cta);
+    cta.textContent = T("shop now →", "立即選購 →"); content.appendChild(cta);
     slide.appendChild(content);
     hero.insertBefore(slide, counter);
   });
@@ -804,7 +832,7 @@ function startHero(){
   function go(i){ slides[active].classList.remove("active"); counter.children[active].classList.remove("active"); active = i; slides[active].classList.add("active"); counter.children[active].classList.add("active"); }
   for (var i = 0; i < slides.length; i++) (function(i){
     var btn = document.createElement("button"); btn.type = "button"; btn.textContent = String(i + 1).padStart(2, "0");
-    btn.setAttribute("aria-label", "slide " + (i + 1)); if (i === 0) btn.classList.add("active");
+    btn.setAttribute("aria-label", T("slide ", "第 ") + (i + 1) + T("", " 張")); if (i === 0) btn.classList.add("active");
     btn.onclick = function(){ go(i); }; counter.appendChild(btn);
   })(i);
   if (slides.length > 1) heroTimer = setInterval(function(){ go((active + 1) % slides.length); }, 6000);
@@ -816,20 +844,20 @@ function wireHome(){
     e.preventDefault();
     var em = document.getElementById("news-email").value.trim();
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) post({type: "signup", email: em});
-    f.querySelector("button").textContent = "thanks ♡";
+    f.querySelector("button").textContent = T("thanks ♡", "謝謝 ♡");
   });
 }
 
 /* ---------- product page ---------- */
 function customSteps(p){
   var lay = safeUrl(p.layoutLink), file = /^data:/.test(p.layoutFile || ""), prev = safeImg(p.layoutPreview);
-  return '<div class="howto"><div class="label">how it works</div><ol class="steps">' +
-    '<li><div><h2>order your camera</h2><p>add it to your bag and pay with NewebPay. one design per camera, or tell us if several cameras share one design.</p></div></li>' +
-    '<li><div><h2>download the layout</h2><p>design on top of our layout in Illustrator, Canva or any app you like. keep your artwork inside the cut line.</p>' +
-      (prev ? '<img class="layout-prev" src="' + prev + '" alt="film camera wrapper layout: front piece and back piece with cut lines">' : '') +
-      (file ? '<button type="button" class="btn btn-add sm" id="lay-dl">download the layout (PDF) ↓</button><p class="hint" id="lay-msg" role="status"></p>'
-        : lay ? '<a class="btn btn-add sm" href="' + esc(lay) + '" target="_blank" rel="noopener">download the layout ↓</a>' : '<p class="hint">the layout download is coming soon. message us on instagram and we\'ll send it to you.</p>') + '</div></li>' +
-    '<li><div><h2>upload your design</h2><p>send us your finished file (AI or PDF) with your order number. we print it, wrap your camera and ship it to you.</p><a class="btn btn-add sm" href="#upload">upload your design →</a></div></li>' +
+  return '<div class="howto"><div class="label">' + T("how it works", "訂購流程") + '</div><ol class="steps">' +
+    '<li><div><h2>' + T("order your camera", "訂購相機") + '</h2><p>' + T("add it to your bag and pay with NewebPay. one design per camera, or tell us if several cameras share one design.", "加入購物袋並以藍新金流付款。每台相機一個設計，如果多台相機使用同一個設計，請告訴我們。") + '</p></div></li>' +
+    '<li><div><h2>' + T("download the layout", "下載版型") + '</h2><p>' + T("design on top of our layout in Illustrator, Canva or any app you like. keep your artwork inside the cut line.", "用 Illustrator、Canva 或任何你喜歡的軟體，在我們的版型上設計。圖案請放在裁切線內。") + '</p>' +
+      (prev ? '<img class="layout-prev" src="' + prev + '" alt="' + T("film camera wrapper layout: front piece and back piece with cut lines", "底片相機外包裝版型：正面與背面，含裁切線") + '">' : '') +
+      (file ? '<button type="button" class="btn btn-add sm" id="lay-dl">' + T("download the layout (PDF) ↓", "下載版型 (PDF) ↓") + '</button><p class="hint" id="lay-msg" role="status"></p>'
+        : lay ? '<a class="btn btn-add sm" href="' + esc(lay) + '" target="_blank" rel="noopener">' + T("download the layout ↓", "下載版型 ↓") + '</a>' : '<p class="hint">' + T("the layout download is coming soon. message us on instagram and we'll send it to you.", "版型下載即將開放，請先在 Instagram 私訊我們，我們會傳給你。") + '</p>') + '</div></li>' +
+    '<li><div><h2>' + T("upload your design", "上傳你的設計") + '</h2><p>' + T("send us your finished file (AI or PDF) with your order number. we print it, wrap your camera and ship it to you.", "把完成的檔案（AI 或 PDF）連同訂單編號傳給我們，我們會印製、包裝好你的相機並寄給你。") + '</p><a class="btn btn-add sm" href="#upload">' + T("upload your design →", "上傳你的設計 →") + '</a></div></li>' +
     '</ol></div>';
 }
 function dataToBlob(uri){
@@ -845,19 +873,19 @@ function downloadLayout(p, btn){
     var url = URL.createObjectURL(blob), a = document.createElement("a");
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-    if (msg) msg.textContent = "downloading " + name + " ♡";
+    if (msg) msg.textContent = T("downloading ", "下載中：") + name + " ♡";
   }
   var c = window.claude;
   if (!(c && c.use)) { viaLink(); return; }
   btn.disabled = true;
   c.use("downloads").then(function(dl){
     if (!dl) { viaLink(); return; }
-    return dl.save({filename: name, data: blob}).then(function(r){ if (msg && (!r || r.status !== "declined")) msg.textContent = "saved " + name + " ♡"; });
+    return dl.save({filename: name, data: blob}).then(function(r){ if (msg && (!r || r.status !== "declined")) msg.textContent = T("saved ", "已儲存：") + name + " ♡"; });
   }).catch(function(err){ if (!(err && err.code === "declined")) viaLink(); }).then(function(){ btn.disabled = false; });
 }
 function hasCustom(o){ return !!(o && o.items && o.items.some(function(it){ var p = findP(it.id); return it.custom || (p && p.custom); })); }
 function pdpPage(p){
-  if (!p) return '<div class="pg-pdp">' + navPdp() + '<div class="notfound"><h1>this product floated away.</h1><p>we couldn\'t find that product. it may have been removed.</p><a href="#" class="btn btn-buy">back to the shop</a></div>' + footPdp() + previewBar() + '</div>';
+  if (!p) return '<div class="pg-pdp">' + navPdp() + '<div class="notfound"><h1>' + T("this product floated away.", "這個商品飄走了。") + '</h1><p>' + T("we couldn't find that product. it may have been removed.", "找不到這個商品，可能已經下架了。") + '</p><a href="#" class="btn btn-buy">' + T("back to the shop", "回到商店") + '</a></div>' + footPdp() + previewBar() + '</div>';
   if (!pd || pd.id !== p.id){
     var vs = p.variants || [], first = null;
     vs.forEach(function(v){ if (!first && num(v.stock) > 0) first = v; });
@@ -867,27 +895,27 @@ function pdpPage(p){
   if (pd.hero >= photos.length) pd.hero = 0;
   var hero = photos[pd.hero];
   var fb = FB_PDP[(String(p.id).charCodeAt(2) || 0) % FB_PDP.length];
-  var vs = p.variants || [];
+  var vs = p.variants || [], tag = tx(p, "tag"), desc = tx(p, "description");
   var my = S().showMyship && safeUrl(p.buyLink);
-  return '<div class="pg-pdp">' + navPdp() + crumbs(p.title) +
+  return '<div class="pg-pdp">' + navPdp() + crumbs(tx(p, "title")) +
     '<section class="pdp"><div class="gallery"><div class="gallery-hero" id="g-hero" style="background-image:' + (hero ? 'url(' + hero + ')' : 'none') + '">' +
       (hero ? '' : '<div class="placeholder" style="background:' + fb + '"><img src="' + A.camera + '" alt=""></div>') + '</div>' +
-      (photos.length > 1 ? '<div class="gallery-thumbs">' + photos.slice(0, 5).map(function(src, i){ return '<button type="button" class="gallery-thumb' + (i === pd.hero ? ' active' : '') + '" data-thumb="' + i + '" aria-label="photo ' + (i + 1) + '" style="background-image:url(' + src + ')"></button>'; }).join("") + '</div>' : '') +
+      (photos.length > 1 ? '<div class="gallery-thumbs">' + photos.slice(0, 5).map(function(src, i){ return '<button type="button" class="gallery-thumb' + (i === pd.hero ? ' active' : '') + '" data-thumb="' + i + '" aria-label="' + T("photo ", "照片 ") + (i + 1) + '" style="background-image:url(' + src + ')"></button>'; }).join("") + '</div>' : '') +
     '</div><div class="info">' +
-      (p.tag ? '<div class="tag">' + esc(p.tag) + '</div>' : '') +
-      '<h1 class="title">' + esc(p.title) + '</h1><div class="price"' + (hasTier(p) ? ' style="margin-bottom:10px"' : '') + '>' + esc(money(p.price, p.currency)) + '</div>' +
-      (hasTier(p) ? '<p class="tier">order ' + num(p.bulkQty) + ' or more and pay ' + esc(money(p.bulkPrice, p.currency)) + ' each</p>' : '') +
-      (p.description ? '<p class="desc">' + esc(String(p.description).trim()) + '</p>' : '') +
-      (vs.length ? '<div class="field-block"><div class="label">' + (vs.length === 1 ? 'option' : 'choose your option') + '</div><div class="variants">' +
-        vs.map(function(v){ return '<button type="button" class="variant' + (v.id === pd.v ? ' active' : '') + (num(v.stock) <= 0 ? ' oos' : '') + '" data-v="' + esc(v.id) + '">' + esc(v.label || 'unnamed') + '</button>'; }).join("") +
+      (tag ? '<div class="tag">' + esc(tag) + '</div>' : '') +
+      '<h1 class="title">' + esc(tx(p, "title")) + '</h1><div class="price"' + (hasTier(p) ? ' style="margin-bottom:10px"' : '') + '>' + esc(money(p.price, p.currency)) + '</div>' +
+      (hasTier(p) ? '<p class="tier">' + T("order " + num(p.bulkQty) + " or more and pay " + money(p.bulkPrice, p.currency) + " each", "購買 " + num(p.bulkQty) + " 台以上，每台 " + money(p.bulkPrice, p.currency)) + '</p>' : '') +
+      (desc ? '<p class="desc">' + esc(String(desc).trim()) + '</p>' : '') +
+      (vs.length ? '<div class="field-block"><div class="label">' + (vs.length === 1 ? T("option", "規格") : T("choose your option", "選擇規格")) + '</div><div class="variants">' +
+        vs.map(function(v){ return '<button type="button" class="variant' + (v.id === pd.v ? ' active' : '') + (num(v.stock) <= 0 ? ' oos' : '') + '" data-v="' + esc(v.id) + '">' + esc(tx(v, "label") || T("unnamed", "未命名")) + '</button>'; }).join("") +
         '</div><div class="stock-pill" id="stock"></div></div>' : '') +
-      '<div class="field-block"><div class="label">quantity</div><div class="qty"><button type="button" id="q-minus" aria-label="one less">−</button><span class="v" id="q-v">1</span><button type="button" id="q-plus" aria-label="one more">+</button></div></div>' +
-      '<div class="actions"><button type="button" class="btn btn-buy" id="pd-add">add to bag</button><button type="button" class="btn btn-add" id="pd-now">buy now →</button>' +
-        (my ? '<a class="btn btn-add" href="' + esc(my) + '" target="_blank" rel="noopener">order on 7-11 賣貨便 →</a>' : '') +
+      '<div class="field-block"><div class="label">' + T("quantity", "數量") + '</div><div class="qty"><button type="button" id="q-minus" aria-label="' + T("one less", "減少一個") + '">−</button><span class="v" id="q-v">1</span><button type="button" id="q-plus" aria-label="' + T("one more", "增加一個") + '">+</button></div></div>' +
+      '<div class="actions"><button type="button" class="btn btn-buy" id="pd-add">' + T("add to bag", "加入購物袋") + '</button><button type="button" class="btn btn-add" id="pd-now">' + T("buy now →", "立即購買 →") + '</button>' +
+        (my ? '<a class="btn btn-add" href="' + esc(my) + '" target="_blank" rel="noopener">' + T("order on 7-11 賣貨便 →", "在 7-11 賣貨便訂購 →") + '</a>' : '') +
         '<div class="added" id="pd-msg" role="status"></div></div>' +
       (p.custom ? customSteps(p) : '') +
-      '<div class="meta-rows"><div class="meta-row"><span class="k">order &amp; pay</span><span>online with NewebPay 藍新金流</span></div>' +
-        '<div class="meta-row"><span class="k">delivery</span><span>home delivery · ' + esc(shipLine()) + '</span></div>' +
+      '<div class="meta-rows"><div class="meta-row"><span class="k">' + T("order &amp; pay", "訂購與付款") + '</span><span>' + T("online with NewebPay 藍新金流", "藍新金流線上付款") + '</span></div>' +
+        '<div class="meta-row"><span class="k">' + T("delivery", "配送") + '</span><span>' + T("home delivery · ", "宅配 · ") + esc(shipLineL()) + '</span></div>' +
         '<div class="meta-row"><span class="k">id</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-3)">' + esc(p.id) + '</span></div></div>' +
     '</div></section>' + footPdp() + previewBar() + '</div>';
 }
@@ -899,9 +927,9 @@ function wirePdp(p){
     if (pd.qty > max && max > 0 && max !== Infinity) pd.qty = max;
     document.getElementById("q-v").textContent = pd.qty;
     var st = document.getElementById("stock"), v = findV(p, pd.v);
-    if (st && v){ var n = num(v.stock); st.className = "stock-pill" + (n <= 5 && n > 0 ? " low" : ""); st.textContent = n <= 0 ? "sold out" : n <= 5 ? "only " + n + " left" : n + " in stock"; }
+    if (st && v){ var n = num(v.stock); st.className = "stock-pill" + (n <= 5 && n > 0 ? " low" : ""); st.textContent = n <= 0 ? T("sold out", "已售完") : n <= 5 ? T("only " + n + " left", "只剩 " + n + " 個") : T(n + " in stock", "庫存 " + n + " 個"); }
     var a = document.getElementById("pd-add"), b = document.getElementById("pd-now");
-    a.disabled = !inStock; b.disabled = !inStock; a.textContent = inStock ? "add to bag" : "sold out";
+    a.disabled = !inStock; b.disabled = !inStock; a.textContent = inStock ? T("add to bag", "加入購物袋") : T("sold out", "已售完");
     app.querySelectorAll(".variant").forEach(function(el){ el.classList.toggle("active", el.dataset.v === pd.v); });
   }
   sync();
@@ -912,7 +940,7 @@ function wirePdp(p){
   var msg = document.getElementById("pd-msg");
   document.getElementById("pd-add").addEventListener("click", function(){
     var ok = addToBag(p.id, pd.v, pd.qty);
-    msg.innerHTML = ok ? 'added to your bag ♡ · <a href="#bag">view bag</a>' : 'you already have all we have in stock. <a href="#bag">view bag</a>';
+    msg.innerHTML = ok ? T('added to your bag ♡ · <a href="#bag">view bag</a>', '已加入購物袋 ♡ · <a href="#bag">查看購物袋</a>') : T('you already have all we have in stock. <a href="#bag">view bag</a>', '購物袋裡已經是全部的庫存了。<a href="#bag">查看購物袋</a>');
   });
   var ld = document.getElementById("lay-dl");
   if (ld) ld.addEventListener("click", function(){ downloadLayout(p, ld); });
@@ -922,35 +950,34 @@ function wirePdp(p){
 /* ---------- bag page ---------- */
 function lineHTML(l, ctl, i){
   return '<div class="line"><div class="line-th" style="' + thumbStyle(l.p) + '">' + thumbGlyph(l.p) + '</div>' +
-    '<div style="min-width:0"><div class="line-name">' + esc(l.p.title) + '</div><div class="line-meta">' + (l.v ? esc(l.v.label) + ' · ' : '') + esc(money(l.price, l.p.currency)) + (ctl ? '' : ' × ' + l.qty) + '</div></div>' +
-    (ctl ? '<div class="line-ctl"><div class="qty"><button type="button" data-dec="' + i + '" aria-label="one less">−</button><span class="v">' + l.qty + '</span><button type="button" data-inc="' + i + '" aria-label="one more">+</button></div><button type="button" class="rm" data-rm="' + i + '">remove</button></div>'
+    '<div style="min-width:0"><div class="line-name">' + esc(tx(l.p, "title")) + '</div><div class="line-meta">' + (l.v ? esc(tx(l.v, "label")) + ' · ' : '') + esc(money(l.price, l.p.currency)) + (ctl ? '' : ' × ' + l.qty) + '</div></div>' +
+    (ctl ? '<div class="line-ctl"><div class="qty"><button type="button" data-dec="' + i + '" aria-label="' + T("one less", "減少一個") + '">−</button><span class="v">' + l.qty + '</span><button type="button" data-inc="' + i + '" aria-label="' + T("one more", "增加一個") + '">+</button></div><button type="button" class="rm" data-rm="' + i + '">' + T("remove", "移除") + '</button></div>'
       : '<div class="line-meta">' + esc(money(l.price * l.qty)) + '</div>') + '</div>';
 }
 function tierHints(t){
   var seen = {}, out = "";
   (t.lines || []).forEach(function(l){
     if (seen[l.p.id] || !hasTier(l.p)) return; seen[l.p.id] = 1;
-    var left = num(l.p.bulkQty) - l.ptotal;
-    out += '<p class="hint">' + (left > 0 ? 'add ' + left + ' more ' + esc(l.p.title) + ' to pay ' + esc(money(l.p.bulkPrice)) + ' each.' : esc(l.p.title) + ': ' + esc(money(l.p.bulkPrice)) + ' each for ' + num(l.p.bulkQty) + '+ ♡') + '</p>';
+    var left = num(l.p.bulkQty) - l.ptotal, nm = esc(tx(l.p, "title")), bp = esc(money(l.p.bulkPrice));
+    out += '<p class="hint">' + (left > 0 ? T('add ' + left + ' more ' + nm + ' to pay ' + bp + ' each.', '再加 ' + left + ' 個「' + nm + '」，每個只要 ' + bp + '。') : T(nm + ': ' + bp + ' each for ' + num(l.p.bulkQty) + '+ ♡', '「' + nm + '」' + num(l.p.bulkQty) + ' 個以上，每個 ' + bp + ' ♡')) + '</p>';
   });
   return out;
 }
 function rowsHTML(t, shipKnown){
   var s = S();
-  return '<dl class="rows"><dt>subtotal</dt><dd>' + esc(money(t.sub)) + '</dd><dt>shipping</dt><dd>' +
-    (shipKnown || t.ship === 0 || (num(s.freeOver) > 0 && t.sub >= num(s.freeOver)) ? (t.ship === 0 ? 'free' : esc(money(t.ship))) : esc(money(s.feeHome))) + '</dd>' +
-    '<dt class="tot">total</dt><dd class="tot">' + esc(money(t.total)) + '</dd></dl>' +
-    (num(s.freeOver) > 0 && t.sub < num(s.freeOver) ? '<p class="hint">add ' + esc(money(num(s.freeOver) - t.sub)) + ' more for free shipping.</p>' : '') + tierHints(t);
+  return '<dl class="rows"><dt>' + T("subtotal", "小計") + '</dt><dd>' + esc(money(t.sub)) + '</dd><dt>' + T("shipping", "運費") + '</dt><dd>' +
+    (shipKnown || t.ship === 0 || (num(s.freeOver) > 0 && t.sub >= num(s.freeOver)) ? (t.ship === 0 ? T("free", "免運") : esc(money(t.ship))) : esc(money(s.feeHome))) + '</dd>' +
+    '<dt class="tot">' + T("total", "總計") + '</dt><dd class="tot">' + esc(money(t.total)) + '</dd></dl>' +
+    (num(s.freeOver) > 0 && t.sub < num(s.freeOver) ? '<p class="hint">' + T('add ' + esc(money(num(s.freeOver) - t.sub)) + ' more for free shipping.', '再買 ' + esc(money(num(s.freeOver) - t.sub)) + ' 就免運費。') + '</p>' : '') + tierHints(t);
 }
-function emptyBag(h){ return '<div class="notfound"><h1>' + h + '</h1><p>add a camera or a roll of film first.</p><a href="#products" class="btn btn-buy">back to the shop</a></div>'; }
+function emptyBag(h){ return '<div class="notfound"><h1>' + h + '</h1><p>' + T("add a camera or a roll of film first.", "先挑一台相機或一卷底片吧。") + '</p><a href="#products" class="btn btn-buy">' + T("back to the shop", "回到商店") + '</a></div>'; }
 function bagPage(){
   var t = totals();
   bag = bag.filter(function(l){ var p = findP(l.id); return p && (!l.v || findV(p, l.v)); });
-  var keys = t.lines.map(function(l){ return l; });
-  return '<div class="pg-pdp">' + navPdp() + crumbs("bag") +
-    (t.lines.length ? '<section class="pdp"><div><h1 class="co-title">your bag</h1><div>' + keys.map(function(l, i){ return lineHTML(l, true, i); }).join("") + '</div></div>' +
-      '<aside class="sum"><h2>summary</h2>' + rowsHTML(t, false) + '<a class="btn btn-buy" href="#checkout">checkout →</a><a class="textlink" href="#products">keep shopping</a></aside></section>'
-      : emptyBag("your bag is empty.")) + footPdp() + previewBar() + '</div>';
+  return '<div class="pg-pdp">' + navPdp() + crumbs(T("bag", "購物袋")) +
+    (t.lines.length ? '<section class="pdp"><div><h1 class="co-title">' + T("your bag", "你的購物袋") + '</h1><div>' + t.lines.map(function(l, i){ return lineHTML(l, true, i); }).join("") + '</div></div>' +
+      '<aside class="sum"><h2>' + T("summary", "訂單摘要") + '</h2>' + rowsHTML(t, false) + '<a class="btn btn-buy" href="#checkout">' + T("checkout →", "前往結帳 →") + '</a><a class="textlink" href="#products">' + T("keep shopping", "繼續逛逛") + '</a></aside></section>'
+      : emptyBag(T("your bag is empty.", "購物袋是空的。"))) + footPdp() + previewBar() + '</div>';
 }
 function wireBag(){
   var t = totals();
@@ -972,67 +999,66 @@ function fl(label, key, type, full, extra){
   var v = esc(cust[key] || "");
   var input = type === "textarea" ? '<textarea class="inp" id="co-' + key + '" data-c="' + key + '"' + (extra || "") + '>' + v + '</textarea>'
     : '<input class="inp" id="co-' + key + '" data-c="' + key + '" type="' + type + '" value="' + v + '"' + (extra || "") + '>';
-  return '<label class="fl' + (full ? ' full' : '') + '" for="co-' + key + '"><span>' + esc(label) + '</span>' + input + (coErr[key] ? '<span class="err">' + esc(coErr[key]) + '</span>' : '') + '</label>';
+  return '<label class="fl' + (full ? ' full' : '') + '" for="co-' + key + '"><span>' + esc(label) + '</span>' + input + (coErr[key] ? '<span class="err">' + esc(errText(coErr[key])) + '</span>' : '') + '</label>';
+}
+function orderLines(o){
+  return o.items.map(function(it){
+    var p = findP(it.id) || {id: it.id, title: it.title, photos: []}, v = null;
+    if (it.vid && p.variants) v = findV(p, it.vid);
+    if (!v && it.variant) v = {label: it.variant};
+    return lineHTML({p: p, v: v, qty: it.qty, price: it.price}, false);
+  }).join("");
 }
 function checkoutPage(){
-  var s = S();
+  var s = S(), cr = crumbs(T("checkout", "結帳"));
   if (order && order.done){
-    return '<div class="pg-pdp">' + navPdp() + crumbs("checkout") + '<div class="notfound"><p class="eyebrow">order ' + esc(order.no) + '</p><h1>thank you ♡</h1><p>we\'ll email you at ' + esc(order.c.email) + ' as soon as your payment is confirmed.</p>' + (hasCustom(order) ? '<p>haven\'t sent your camera design yet? upload it any time with your order number.</p><div class="btnrow" style="justify-content:center;margin-bottom:12px"><a href="#upload" class="btn btn-buy">upload your design →</a></div>' : '') + '<a href="#" class="' + (hasCustom(order) ? 'textlink' : 'btn btn-buy') + '" id="co-home">back to the shop</a></div>' + footPdp() + previewBar() + '</div>';
+    return '<div class="pg-pdp">' + navPdp() + cr + '<div class="notfound"><p class="eyebrow">' + T("order ", "訂單 ") + esc(order.no) + '</p><h1>' + T("thank you ♡", "謝謝你 ♡") + '</h1><p>' + T("we'll email you at " + esc(order.c.email) + " as soon as your payment is confirmed.", "確認收到款項後，我們會寄信到 " + esc(order.c.email) + " 通知你。") + '</p>' +
+      (hasCustom(order) ? '<p>' + T("haven't sent your camera design yet? upload it any time with your order number.", "還沒傳相機設計嗎？隨時可以用訂單編號上傳。") + '</p><div class="btnrow" style="justify-content:center;margin-bottom:12px"><a href="#upload" class="btn btn-buy">' + T("upload your design →", "上傳你的設計 →") + '</a></div>' : '') +
+      '<a href="#" class="' + (hasCustom(order) ? 'textlink' : 'btn btn-buy') + '" id="co-home">' + T("back to the shop", "回到商店") + '</a></div>' + footPdp() + previewBar() + '</div>';
   }
   if (order){
-    var link = safeUrl(s.payLink);
-    return '<div class="pg-pdp">' + navPdp() + crumbs("checkout") + '<section class="pdp"><div><p class="eyebrow">order ' + esc(order.no) + '</p><h1 class="co-title">almost done.</h1>' +
-      '<ol class="steps"><li><div><h2>copy your order</h2><p>you\'ll paste it into the note on the payment page, so we know what to send and where.</p>' +
-        '<textarea class="otext" id="order-text" readonly aria-label="your order">' + esc(orderText(order)) + '</textarea>' +
-        '<div class="btnrow" style="margin-top:10px"><button type="button" class="btn btn-add sm" id="co-copy">copy order</button></div></div></li>' +
-      '<li><div><h2>pay ' + esc(money(order.total)) + '</h2>' +
-        (link ? '<p>on the NewebPay 藍新 page, enter <b>' + esc(money(order.total)) + '</b> and paste your order (or at least your order number ' + esc(order.no) + ') into the note.</p>' +
-          (s.payNote ? '<p>' + esc(s.payNote) + '</p>' : '') +
-          '<div class="btnrow"><a class="btn btn-buy" href="' + esc(link) + '" target="_blank" rel="noopener">pay with NewebPay →</a></div>'
-          : '<p>online payment opens soon. keep a copy of your order; we\'ll message you with payment details.</p>') + '</div></li>' +
-      (hasCustom(order) ? '<li><div><h2>upload your design</h2><p>send us your camera design (AI or PDF) with order number ' + esc(order.no) + '. you can do it now or after you pay.</p><a class="btn btn-add sm" href="#upload">upload your design →</a></div></li>' : '') +
-      '<li><div><h2>get your confirmation</h2><p>once your payment comes through, we\'ll email a confirmation to ' + esc(order.c.email) + ' and pack your film.</p></div></li></ol>' +
-      '<div class="btnrow"><button type="button" class="btn btn-add sm" id="co-edit">edit order</button><button type="button" class="btn btn-add sm" id="co-paid">i\'ve paid, clear my bag</button></div></div>' +
-      '<aside class="sum"><h2>your order</h2><div class="lines">' + order.items.map(function(it){ var p = findP(it.id) || {id: it.id, title: it.title, photos: []}; return lineHTML({p: p, v: it.variant ? {label: it.variant} : null, qty: it.qty, price: it.price}, false); }).join("") + '</div>' +
+    var link = safeUrl(s.payLink), amt = esc(money(order.total));
+    return '<div class="pg-pdp">' + navPdp() + cr + '<section class="pdp"><div><p class="eyebrow">' + T("order ", "訂單 ") + esc(order.no) + '</p><h1 class="co-title">' + T("almost done.", "就差一步了。") + '</h1>' +
+      '<ol class="steps"><li><div><h2>' + T("pay ", "付款 ") + amt + '</h2>' +
+        (link ? '<p>' + T("we've got your order details, so there's nothing to copy or paste. tap the button to pay on our secure NewebPay page.", "你的訂單資料我們已經收到了，不需要複製或貼上任何東西。點下方按鈕，到藍新金流安全付款頁面付款。") + '</p>' +
+          '<p>' + T("if the payment page asks for an amount, enter <b>" + amt + "</b>.", "如果付款頁面要求輸入金額，請填 <b>" + amt + "</b>。") + '</p>' +
+          (tx(s, "payNote") ? '<p>' + esc(tx(s, "payNote")) + '</p>' : '') +
+          '<div class="btnrow"><a class="btn btn-buy" href="' + esc(link) + '" target="_blank" rel="noopener">' + T("pay with NewebPay →", "前往藍新金流付款 →") + '</a></div>'
+          : '<p>' + T("online payment opens soon. we've got your order and will message you with payment details.", "線上付款即將開放。我們已收到你的訂單，會再通知你付款方式。") + '</p>') + '</div></li>' +
+      (hasCustom(order) ? '<li><div><h2>' + T("upload your design", "上傳你的設計") + '</h2><p>' + T("send us your camera design (AI or PDF) with order number " + esc(order.no) + ". you can do it now or after you pay.", "請用訂單編號 " + esc(order.no) + " 上傳你的相機設計（AI 或 PDF），付款前後都可以。") + '</p><a class="btn btn-add sm" href="#upload">' + T("upload your design →", "上傳你的設計 →") + '</a></div></li>' : '') +
+      '<li><div><h2>' + T("get your confirmation", "收到確認信") + '</h2><p>' + T("once your payment comes through, we'll email a confirmation to " + esc(order.c.email) + " and pack your film.", "確認收到款項後，我們會寄確認信到 " + esc(order.c.email) + "，並開始包裝你的商品。") + '</p></div></li></ol>' +
+      '<div class="btnrow"><button type="button" class="btn btn-add sm" id="co-edit">' + T("edit order", "修改訂單") + '</button><button type="button" class="btn btn-add sm" id="co-paid">' + T("i've paid, clear my bag", "我已付款，清空購物袋") + '</button></div></div>' +
+      '<aside class="sum"><h2>' + T("your order", "你的訂單") + '</h2><div class="lines">' + orderLines(order) + '</div>' +
         rowsHTML({sub: order.sub, ship: order.ship, total: order.total}, true) + '</aside></section>' + footPdp() + previewBar() + '</div>';
   }
   var t = totals();
-  if (!t.lines.length) return '<div class="pg-pdp">' + navPdp() + crumbs("checkout") + emptyBag("nothing to check out yet.") + footPdp() + previewBar() + '</div>';
-  var m = method();
-  return '<div class="pg-pdp">' + navPdp() + crumbs("checkout") + '<section class="pdp"><form id="co-form" novalidate><h1 class="co-title">checkout</h1>' +
-    '<div class="field-block"><div class="label">delivery</div><div class="variants"><span class="variant active" style="cursor:default">home delivery · ' + esc(shipLine()) + '</span></div></div><div class="form">' +
-      fl("name", "name", "text", false, ' autocomplete="name"') + fl("mobile", "phone", "tel", false, ' autocomplete="tel" inputmode="tel"') +
+  if (!t.lines.length) return '<div class="pg-pdp">' + navPdp() + cr + emptyBag(T("nothing to check out yet.", "目前沒有要結帳的商品。")) + footPdp() + previewBar() + '</div>';
+  return '<div class="pg-pdp">' + navPdp() + cr + '<section class="pdp"><form id="co-form" novalidate><h1 class="co-title">' + T("checkout", "結帳") + '</h1>' +
+    '<div class="field-block"><div class="label">' + T("delivery", "配送方式") + '</div><div class="variants"><span class="variant active" style="cursor:default">' + T("home delivery · ", "宅配 · ") + esc(shipLineL()) + '</span></div></div><div class="form">' +
+      fl(T("name", "姓名"), "name", "text", false, ' autocomplete="name"') + fl(T("mobile", "手機"), "phone", "tel", false, ' autocomplete="tel" inputmode="tel"') +
       fl("email", "email", "email", true, ' autocomplete="email"') +
-      fl("address", "addr", "text", true, ' autocomplete="street-address"') +
-      fl("note (optional)", "note", "textarea", true) +
-    '</div><div class="actions" style="margin-top:24px"><button type="submit" class="btn btn-buy">place order · ' + esc(money(t.total)) + '</button><p class="hint">next you\'ll pay securely with NewebPay 藍新金流.</p></div></form>' +
-    '<aside class="sum"><h2>summary</h2><div class="lines">' + t.lines.map(function(l){ return lineHTML(l, false); }).join("") + '</div>' + rowsHTML(t, true) + '<a class="textlink" href="#bag">edit bag</a></aside></section>' + footPdp() + previewBar() + '</div>';
+      fl(T("address", "收件地址"), "addr", "text", true, ' autocomplete="street-address"') +
+      fl(T("note (optional)", "備註（選填）"), "note", "textarea", true) +
+    '</div><div class="actions" style="margin-top:24px"><button type="submit" class="btn btn-buy">' + T("place order · ", "送出訂單 · ") + esc(money(t.total)) + '</button><p class="hint">' + T("next you'll pay securely with NewebPay 藍新金流.", "下一步會前往藍新金流安全付款。") + '</p></div></form>' +
+    '<aside class="sum"><h2>' + T("summary", "訂單摘要") + '</h2><div class="lines">' + t.lines.map(function(l){ return lineHTML(l, false); }).join("") + '</div>' + rowsHTML(t, true) + '<a class="textlink" href="#bag">' + T("edit bag", "修改購物袋") + '</a></aside></section>' + footPdp() + previewBar() + '</div>';
 }
 function wireCheckout(){
   var f = document.getElementById("co-form");
   if (f){
     f.addEventListener("input", function(e){ var k = e.target.dataset.c; if (k){ cust[k] = e.target.value; lsSet(CKEY, cust); } });
-    app.querySelectorAll("[data-m]").forEach(function(b){ b.addEventListener("click", function(){ cust.method = b.dataset.m; lsSet(CKEY, cust); render(true); }); });
     f.addEventListener("submit", function(e){
       e.preventDefault(); coErr = {};
-      ["name", "phone", "email", "addr"].forEach(function(k){ if (!String(cust[k] || "").trim()) coErr[k] = "please fill this in."; });
-      if (!coErr.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(cust.email).trim())) coErr.email = "enter a valid email, like you@mail.com.";
-      if (!coErr.phone && String(cust.phone).replace(/\D/g, "").length < 8) coErr.phone = "enter a valid mobile number.";
+      ["name", "phone", "email", "addr"].forEach(function(k){ if (!String(cust[k] || "").trim()) coErr[k] = "req"; });
+      if (!coErr.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(cust.email).trim())) coErr.email = "email";
+      if (!coErr.phone && String(cust.phone).replace(/\D/g, "").length < 8) coErr.phone = "phone";
       if (Object.keys(coErr).length){ render(true); var el = document.querySelector(".fl .err"); if (el){ var inp = el.parentNode.querySelector("input,textarea"); if (inp) inp.focus(); } return; }
       var t = totals();
-      order = {no: newOrderNo(), created: new Date().toISOString(), sub: t.sub, ship: t.ship, total: t.total,
-        items: t.lines.map(function(l){ return {id: l.p.id, title: l.p.title, variant: l.v ? l.v.label : "", price: l.price, qty: l.qty, custom: !!l.p.custom}; }),
+      order = {no: newOrderNo(), created: new Date().toISOString(), sub: t.sub, ship: t.ship, total: t.total, lang: lang,
+        items: t.lines.map(function(l){ return {id: l.p.id, title: l.p.title, variant: l.v ? l.v.label : "", vid: l.v ? l.v.id : "", price: l.price, qty: l.qty, custom: !!l.p.custom}; }),
         c: {name: String(cust.name).trim(), phone: String(cust.phone).trim(), email: String(cust.email).trim(), method: method(), addr: String(cust.addr).trim(), note: String(cust.note || "").trim()}};
       sendOrder(order); lsSet(OKEY, order); render(); window.scrollTo(0, 0);
     });
   }
-  var cp = document.getElementById("co-copy");
-  if (cp) cp.addEventListener("click", function(){
-    var ta = document.getElementById("order-text");
-    var done = function(){ cp.textContent = "copied ♡"; setTimeout(function(){ cp.textContent = "copy order"; }, 1800); };
-    var fallback = function(){ ta.focus(); ta.select(); cp.textContent = "selected, press copy"; };
-    try { navigator.clipboard.writeText(ta.value).then(done, fallback); } catch (e) { fallback(); }
-  });
   var ed = document.getElementById("co-edit"); if (ed) ed.addEventListener("click", function(){ order = null; lsSet(OKEY, null); render(); });
   var pdd = document.getElementById("co-paid"); if (pdd) pdd.addEventListener("click", function(){ bag = []; saveBag(); order.done = true; lsSet(OKEY, order); render(); window.scrollTo(0, 0); });
   var hm = document.getElementById("co-home"); if (hm) hm.addEventListener("click", function(){ order = null; lsSet(OKEY, null); });
@@ -1043,34 +1069,36 @@ var MAXMB = 25, OKEXT = /\.(ai|pdf|png|jpe?g|psd|svg|eps|tiff?)$/i;
 var up = {files: [], err: {}, busy: false, done: null, msg: "", bad: false};
 function fmtMB(b){ return (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + " MB"; }
 function uploadPage(){
-  var on = !!hook(), o = lsGet(OKEY);
+  var on = !!hook(), o = lsGet(OKEY), cr = crumbs(T("upload your design", "上傳你的設計"));
   if (up.no == null) up.no = o && o.no ? o.no : "";
   if (up.name == null) up.name = (o && o.c && o.c.name) || cust.name || "";
   if (up.email == null) up.email = (o && o.c && o.c.email) || cust.email || "";
   if (up.note == null) up.note = "";
-  if (up.done) return '<div class="pg-pdp">' + navPdp() + crumbs("upload your design") + '<div class="notfound"><p class="eyebrow">order ' + esc(up.done.no) + '</p><h1>got it ♡</h1><p>we received ' + up.done.n + (up.done.n === 1 ? ' file' : ' files') + '. we\'ll check your design and email ' + esc(up.done.email) + ' if anything needs a fix before we print.</p><div class="btnrow" style="justify-content:center;margin-bottom:12px"><button type="button" class="btn btn-add sm" id="up-more">upload another file</button></div><a href="#" class="textlink">back to the shop</a></div>' + footPdp() + previewBar() + '</div>';
+  if (up.done) return '<div class="pg-pdp">' + navPdp() + cr + '<div class="notfound"><p class="eyebrow">' + T("order ", "訂單 ") + esc(up.done.no) + '</p><h1>' + T("got it ♡", "收到了 ♡") + '</h1><p>' +
+    T("we received " + up.done.n + (up.done.n === 1 ? " file" : " files") + ". we'll check your design and email " + esc(up.done.email) + " if anything needs a fix before we print.", "我們收到 " + up.done.n + " 個檔案了。印製前會先檢查你的設計，如果需要修改，會寄信到 " + esc(up.done.email) + " 通知你。") +
+    '</p><div class="btnrow" style="justify-content:center;margin-bottom:12px"><button type="button" class="btn btn-add sm" id="up-more">' + T("upload another file", "再上傳一個檔案") + '</button></div><a href="#" class="textlink">' + T("back to the shop", "回到商店") + '</a></div>' + footPdp() + previewBar() + '</div>';
   function f(label, key, type, full, extra){
     var v = esc(up[key] || ""), id = 'up-' + key;
     var input = type === "textarea" ? '<textarea class="inp" id="' + id + '" data-u="' + key + '"' + (extra || '') + '>' + v + '</textarea>' : '<input class="inp" id="' + id + '" data-u="' + key + '" type="' + type + '" value="' + v + '"' + (extra || '') + '>';
-    return '<label class="fl' + (full ? ' full' : '') + '" for="' + id + '"><span>' + esc(label) + '</span>' + input + (up.err[key] ? '<span class="err">' + esc(up.err[key]) + '</span>' : '') + '</label>';
+    return '<label class="fl' + (full ? ' full' : '') + '" for="' + id + '"><span>' + esc(label) + '</span>' + input + (up.err[key] ? '<span class="err">' + esc(errText(up.err[key])) + '</span>' : '') + '</label>';
   }
   var ig = safeUrl(S().instagram);
-  return '<div class="pg-pdp">' + navPdp() + crumbs("upload your design") + '<section class="pdp"><form id="up-form" novalidate><p class="eyebrow">custom film cam</p><h1 class="co-title">upload your design</h1>' +
-    (on ? '' : '<p class="status bad" style="margin-bottom:20px">design uploads open soon. for now, send your file to us on instagram' + (ig ? ' (<a href="' + esc(ig) + '" target="_blank" rel="noopener" style="border-bottom:1px solid">@strawberries.moon</a>)' : '') + ' with your order number.</p>') +
-    '<div class="form">' + f("order number", "no", "text", false, ' placeholder="SM-1107-1234" autocomplete="off"') + f("name", "name", "text", false, ' autocomplete="name"') +
+  return '<div class="pg-pdp">' + navPdp() + cr + '<section class="pdp"><form id="up-form" novalidate><p class="eyebrow">' + T("custom film cam", "客製底片相機") + '</p><h1 class="co-title">' + T("upload your design", "上傳你的設計") + '</h1>' +
+    (on ? '' : '<p class="status bad" style="margin-bottom:20px">' + T("design uploads open soon. for now, send your file to us on instagram", "設計上傳即將開放。目前請先透過 Instagram") + (ig ? ' (<a href="' + esc(ig) + '" target="_blank" rel="noopener" style="border-bottom:1px solid">@strawberries.moon</a>)' : '') + T(" with your order number.", " 傳檔案給我們，並附上訂單編號。") + '</p>') +
+    '<div class="form">' + f(T("order number", "訂單編號"), "no", "text", false, ' placeholder="SM-1107-1234" autocomplete="off"') + f(T("name", "姓名"), "name", "text", false, ' autocomplete="name"') +
       f("email", "email", "email", true, ' autocomplete="email"') +
-      '<div class="fl full"><span>design files · AI or PDF</span><label class="drop" id="up-drop" for="up-file"><input type="file" id="up-file" multiple accept=".ai,.pdf,.png,.jpg,.jpeg,.psd,.svg,.eps,.tif,.tiff,application/pdf,application/postscript,image/*"><b>choose files</b> or drop them here<small>AI, PDF, PNG or JPG · up to ' + MAXMB + ' MB each</small></label>' +
-        (up.files.length ? '<div class="flist">' + up.files.map(function(fl, i){ return '<div class="fitem"><span class="fname">' + esc(fl.name) + '</span><span class="fsize">' + fmtMB(fl.size) + '</span><button type="button" class="rm" data-fdel="' + i + '"' + (up.busy ? ' disabled' : '') + '>remove</button></div>'; }).join("") + '</div>' : '') +
-        (up.err.files ? '<span class="err">' + esc(up.err.files) + '</span>' : '') + '</div>' +
-      f("note (optional)", "note", "textarea", true, ' placeholder="e.g. same design for 3 cameras, or a Google Drive link if your file is bigger than ' + MAXMB + ' MB"') +
-    '</div><div class="actions" style="margin-top:24px"><button type="submit" class="btn btn-buy" id="up-go"' + (on && !up.busy ? '' : ' disabled') + '>' + (up.busy ? 'uploading…' : 'upload design') + '</button>' +
+      '<div class="fl full"><span>' + T("design files · AI or PDF", "設計檔案 · AI 或 PDF") + '</span><label class="drop" id="up-drop" for="up-file"><input type="file" id="up-file" multiple accept=".ai,.pdf,.png,.jpg,.jpeg,.psd,.svg,.eps,.tif,.tiff,application/pdf,application/postscript,image/*"><b>' + T("choose files", "選擇檔案") + '</b>' + T("or drop them here", "或把檔案拖到這裡") + '<small>' + T("AI, PDF, PNG or JPG · up to " + MAXMB + " MB each", "AI、PDF、PNG 或 JPG · 每個檔案最大 " + MAXMB + " MB") + '</small></label>' +
+        (up.files.length ? '<div class="flist">' + up.files.map(function(fl, i){ return '<div class="fitem"><span class="fname">' + esc(fl.name) + '</span><span class="fsize">' + fmtMB(fl.size) + '</span><button type="button" class="rm" data-fdel="' + i + '"' + (up.busy ? ' disabled' : '') + '>' + T("remove", "移除") + '</button></div>'; }).join("") + '</div>' : '') +
+        (up.err.files ? '<span class="err">' + esc(errText(up.err.files)) + '</span>' : '') + '</div>' +
+      f(T("note (optional)", "備註（選填）"), "note", "textarea", true, ' placeholder="' + T("e.g. same design for 3 cameras, or a Google Drive link if your file is bigger than " + MAXMB + " MB", "例如：3 台相機用同一個設計，或檔案超過 " + MAXMB + " MB 時附上 Google 雲端連結") + '"') +
+    '</div><div class="actions" style="margin-top:24px"><button type="submit" class="btn btn-buy" id="up-go"' + (on && !up.busy ? '' : ' disabled') + '>' + (up.busy ? T("uploading…", "上傳中…") : T("upload design", "上傳設計")) + '</button>' +
       '<p class="' + (up.bad ? 'err' : 'hint') + '" id="up-msg" role="status">' + esc(up.msg) + '</p></div></form>' +
-    '<aside class="sum"><h2>before you upload</h2><ul class="checklist">' +
-      '<li>design on top of our layout and keep everything inside the cut line.</li>' +
-      '<li>AI or PDF is best. PNG or JPG works too if it\'s big enough (at least 300 dpi at print size).</li>' +
-      '<li>in Illustrator, turn text into outlines and embed your photos, so nothing goes missing.</li>' +
-      '<li>one file per design. ordering several cameras with different designs? upload them all here.</li>' +
-      '<li>file bigger than ' + MAXMB + ' MB? put a Google Drive or WeTransfer link in the note.</li>' +
+    '<aside class="sum"><h2>' + T("before you upload", "上傳前請確認") + '</h2><ul class="checklist">' +
+      '<li>' + T("design on top of our layout and keep everything inside the cut line.", "在我們的版型上設計，所有圖案都放在裁切線內。") + '</li>' +
+      '<li>' + T("AI or PDF is best. PNG or JPG works too if it's big enough (at least 300 dpi at print size).", "最好是 AI 或 PDF。PNG 或 JPG 也可以，但解析度要夠（印刷尺寸至少 300 dpi）。") + '</li>' +
+      '<li>' + T("in Illustrator, turn text into outlines and embed your photos, so nothing goes missing.", "在 Illustrator 裡，請把文字建立外框、照片嵌入，避免檔案缺字或缺圖。") + '</li>' +
+      '<li>' + T("one file per design. ordering several cameras with different designs? upload them all here.", "一個設計一個檔案。多台相機用不同設計？全部在這裡上傳就可以。") + '</li>' +
+      '<li>' + T("file bigger than " + MAXMB + " MB? put a Google Drive or WeTransfer link in the note.", "檔案超過 " + MAXMB + " MB？請把 Google 雲端或 WeTransfer 連結貼在備註。") + '</li>' +
     '</ul></aside></section>' + footPdp() + previewBar() + '</div>';
 }
 function sendDesign(file, meta){
@@ -1097,11 +1125,11 @@ function wireUpload(){
   function addFiles(list){
     var bad = [];
     Array.prototype.slice.call(list || []).forEach(function(fl){
-      if (!OKEXT.test(fl.name)) bad.push(fl.name + " isn't an AI, PDF or image file");
-      else if (fl.size > MAXMB * 1048576) bad.push(fl.name + " is " + fmtMB(fl.size) + ". put a Google Drive or WeTransfer link in the note instead");
+      if (!OKEXT.test(fl.name)) bad.push(T(fl.name + " isn't an AI, PDF or image file", fl.name + " 不是 AI、PDF 或圖片檔"));
+      else if (fl.size > MAXMB * 1048576) bad.push(T(fl.name + " is " + fmtMB(fl.size) + ". put a Google Drive or WeTransfer link in the note instead", fl.name + " 有 " + fmtMB(fl.size) + "，請改把 Google 雲端或 WeTransfer 連結貼在備註"));
       else up.files.push(fl);
     });
-    up.err.files = bad.join(". ") + (bad.length ? "." : "");
+    up.err.files = bad.join(T(". ", "。")) + (bad.length ? T(".", "。") : "");
     render(true);
   }
   var inp = document.getElementById("up-file");
@@ -1114,21 +1142,21 @@ function wireUpload(){
   form.addEventListener("submit", function(e){
     e.preventDefault(); if (up.busy || !hook()) return;
     up.err = {};
-    if (!String(up.no || "").trim()) up.err.no = "add your order number. it's on your order page and in your payment note.";
-    if (!String(up.name || "").trim()) up.err.name = "please fill this in.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(up.email || "").trim())) up.err.email = "enter a valid email, like you@mail.com.";
-    if (!up.files.length) up.err.files = "choose at least one design file.";
+    if (!String(up.no || "").trim()) up.err.no = "no";
+    if (!String(up.name || "").trim()) up.err.name = "req";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(up.email || "").trim())) up.err.email = "email";
+    if (!up.files.length) up.err.files = "files";
     if (Object.keys(up.err).length){ up.msg = ""; render(true); return; }
     var meta = {no: String(up.no).trim().toUpperCase(), name: String(up.name).trim(), email: String(up.email).trim(), note: String(up.note || "").trim()};
     var files = up.files.slice(), i = 0;
     up.busy = true; up.bad = false;
     function next(){
       if (i >= files.length){ up.busy = false; up.done = {no: meta.no, email: meta.email, n: files.length}; up.files = []; up.msg = ""; render(true); window.scrollTo(0, 0); return; }
-      up.msg = "uploading " + (i + 1) + " of " + files.length + ": " + files[i].name + " (" + fmtMB(files[i].size) + "). keep this page open, big files can take a minute.";
+      up.msg = T("uploading " + (i + 1) + " of " + files.length + ": " + files[i].name + " (" + fmtMB(files[i].size) + "). keep this page open, big files can take a minute.", "上傳中 " + (i + 1) + " / " + files.length + "：" + files[i].name + "（" + fmtMB(files[i].size) + "）。請不要關閉頁面，大檔案可能需要一分鐘。");
       render(true);
       sendDesign(files[i], meta).then(function(){ up.files.shift(); i++; next(); }).catch(function(){
         up.busy = false; up.bad = true;
-        up.msg = "couldn't upload " + files[i].name + ". check your connection and press upload again. still stuck? send it to us on instagram with your order number.";
+        up.msg = T("couldn't upload " + files[i].name + ". check your connection and press upload again. still stuck? send it to us on instagram with your order number.", files[i].name + " 上傳失敗。請檢查網路後再按一次上傳。還是不行的話，請透過 Instagram 傳給我們並附上訂單編號。");
         render(true);
       });
     }
@@ -1154,7 +1182,8 @@ function prodEditor(p, i, n){
       photos.map(function(ph, j){ return '<div class="photo"><div class="pi" style="background-image:url(' + safeImg(ph) + ')"></div>' + (j === 0 ? '<span class="main">main photo</span>' : '') +
         '<div class="pa"><button type="button" data-act="ph-left" data-i="' + i + '" data-j="' + j + '" aria-label="move left">←</button><button type="button" data-act="ph-del" data-i="' + i + '" data-j="' + j + '" aria-label="remove photo">✕</button><button type="button" data-act="ph-right" data-i="' + i + '" data-j="' + j + '" aria-label="move right">→</button></div></div>'; }).join("") +
       '<label class="upl">+ add photos<input type="file" accept="image/*" multiple data-upload="product" data-i="' + i + '"></label></div>' +
-    '<div class="form">' + F("product name", key + ".title", p.title, "text") + F("price (NT$)", key + ".price", p.price, "number", NUM) +
+    '<div class="form">' + F("product name", key + ".title", p.title, "text") +
+      F("price (NT$)", key + ".price", p.price, "number", NUM) +
       F("tag (the little pill, optional)", key + ".tag", p.tag, "text", ' placeholder="limited collection"') + F("7-11 賣貨便 link (optional)", key + ".buyLink", p.buyLink, "url", ' placeholder="https://myship.7-11.com.tw/…"') +
       F("bulk price starts at quantity (optional)", key + ".bulkQty", p.bulkQty || "", "number", NUM + ' placeholder="5"') + F("bulk price each (NT$)", key + ".bulkPrice", p.bulkPrice || "", "number", NUM + ' placeholder="800"') +
       F("description", key + ".description", p.description, "textarea", '', true) +
@@ -1200,6 +1229,7 @@ function sellerPage(){
       F("free shipping from (NT$, 0 = never)", "settings.freeOver", s.freeOver, "number", NUM) +
       F("order sheet link (Google Apps Script) · also needed for design uploads", "settings.orderHook", s.orderHook, "url", ' placeholder="https://script.google.com/macros/s/…/exec"') +
       F("extra payment note (optional, shown on the pay step)", "settings.payNote", s.payNote, "text", '', true) +
+      F("中文付款備註 (Chinese payment note)", "settings.payNote_zh", s.payNote_zh || "", "text", '', true) +
       '<label class="check full"><input type="checkbox" id="f-myship" data-k="settings.showMyship"' + (s.showMyship ? ' checked' : '') + '> also show an "order on 7-11 賣貨便" button on products that have a 賣貨便 link</label>' +
     '</div><p class="note">after placing an order, customers copy their order, then pay on your NewebPay page and paste the order into the payment note. with an order sheet link, every order, every newsletter sign-up and every uploaded design also goes to your Google Sheet (design files are saved in a Google Drive folder called "strawberries.moon designs"). that part works on your own website (GitHub), not inside claude.ai.</p></section>' +
     '<section class="sec"><div class="sec-head"><h2>banner slides (' + d.banners.length + ')</h2><button type="button" class="sb small" data-act="b-add">+ add slide</button></div>' +
@@ -1373,8 +1403,10 @@ function render(keep){
   else if (h === "checkout"){ view = "checkout"; html = checkoutPage(); after = wireCheckout; }
   else if (/^p-/.test(h)){ var p = findBySlug(h.slice(2)); view = "p"; html = pdpPage(p); after = function(){ wirePdp(p); }; }
   else { view = "home"; html = homePage(); after = wireHome; }
+  document.documentElement.lang = ZO() ? "zh-Hant" : "en";
   app.innerHTML = html;
   after();
+  var lt = document.getElementById("lang-t"); if (lt) lt.addEventListener("click", function(){ setLang(Z() ? "en" : "zh"); });
   var pe = document.getElementById("pv-edit"); if (pe) pe.addEventListener("click", function(){ location.hash = "seller"; });
   var px = document.getElementById("pv-exit"); if (px) px.addEventListener("click", function(){ previewing = false; render(); });
   if (view === "home" && ANCHORS[h]){ var el = document.getElementById(h); if (el) el.scrollIntoView(); }
